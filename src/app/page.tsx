@@ -4,6 +4,7 @@ import { getDashboardDataAction } from "./actions";
 import { formatCurrency } from "@/lib/format";
 import { getResidencyAwareAnnualCost, lizzym, warsTierBand } from "@/lib/scoring";
 import { ApplicantAiProfileCard } from "@/components/ai/ApplicantAiProfileCard";
+import { SchoolMissionIngestCard } from "@/components/ai/SchoolMissionIngestCard";
 
 export default async function DashboardPage() {
   const { bundle, listData, schoolsCount, factsCount, resourcesCount } =
@@ -117,6 +118,8 @@ export default async function DashboardPage() {
         fallbackMissionTags={bundle.profile.prefs.missionTags}
         fallbackSpecialtyInterest={bundle.profile.stats.specialtyInterest}
       />
+
+      <SchoolMissionIngestCard />
 
       <section className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
         <div className="surface rounded-[2rem] p-6">

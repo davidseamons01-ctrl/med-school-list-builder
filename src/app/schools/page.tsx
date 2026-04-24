@@ -137,6 +137,8 @@ export default async function SchoolsPage({
           school.strategyProfile?.hasThreeYearMdPathway ??
           school.has3YearPathway ??
           false,
+        websiteUrl: school.websiteUrl ?? null,
+        admissionsUrl: school.admissionsUrl ?? null,
       };
     })
     .sort((a, b) => b.fitScore - a.fitScore);

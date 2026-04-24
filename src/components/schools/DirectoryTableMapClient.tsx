@@ -30,6 +30,8 @@ type Row = {
   isFamilyFriendly: boolean;
   hasThreeYearTrackRaw: boolean | null;
   hasThreeYearTrack: boolean;
+  websiteUrl: string | null;
+  admissionsUrl: string | null;
 };
 
 type SortKey = "name" | "fitScore" | "annualCost" | "medianMcat" | "hasThreeYearTrack";
@@ -167,6 +169,8 @@ export function DirectoryTableMapClient({
     score: r.fitScore,
     annualCost: r.annualCost,
     tier: r.tier,
+    websiteUrl: r.websiteUrl,
+    admissionsUrl: r.admissionsUrl,
   }));
 
   return (

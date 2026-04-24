@@ -16,6 +16,8 @@ type MapSchool = {
   annualCost: number | null;
   tier: string;
   campusImageUrl?: string | null;
+  websiteUrl?: string | null;
+  admissionsUrl?: string | null;
 };
 
 type Props = {
@@ -260,6 +262,12 @@ export function SchoolMap({ schools, onVisibleSlugsChange }: Props) {
                       school.lng,
                     ),
                     detailUrl: `/schools/${school.slug}`,
+                    websiteUrl:
+                      school.admissionsUrl ||
+                      school.websiteUrl ||
+                      `https://www.google.com/search?q=${encodeURIComponent(
+                        `${school.name} MD admissions`,
+                      )}`,
                   },
                   symbol: {
                     type: "simple-marker",
@@ -290,9 +298,12 @@ export function SchoolMap({ schools, onVisibleSlugsChange }: Props) {
                           <div>Annual cost: <strong>{cost}</strong></div>
                         </div>
                         <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
-                          <a href="{detailUrl}" style="flex:1 1 auto;background:#0ea5e9;color:white;text-decoration:none;padding:6px 10px;border-radius:8px;font-size:12px;text-align:center;">Open deep dive</a>
-                          <a href="{streetViewUrl}" target="_blank" rel="noreferrer" style="flex:1 1 auto;background:rgba(255,255,255,0.08);color:#e2e8f0;text-decoration:none;padding:6px 10px;border-radius:8px;font-size:12px;text-align:center;border:1px solid rgba(255,255,255,0.1);">Street view</a>
-                          <a href="{earthUrl}" target="_blank" rel="noreferrer" style="flex:1 1 auto;background:rgba(255,255,255,0.08);color:#e2e8f0;text-decoration:none;padding:6px 10px;border-radius:8px;font-size:12px;text-align:center;border:1px solid rgba(255,255,255,0.1);">Google Earth</a>
+                          <a href="{websiteUrl}" target="_blank" rel="noreferrer" style="flex:1 1 auto;background:#0ea5e9;color:white;text-decoration:none;padding:6px 10px;border-radius:8px;font-size:12px;text-align:center;">School website</a>
+                          <a href="{detailUrl}" style="flex:1 1 auto;background:rgba(255,255,255,0.08);color:#e2e8f0;text-decoration:none;padding:6px 10px;border-radius:8px;font-size:12px;text-align:center;border:1px solid rgba(255,255,255,0.1);">Research hub</a>
+                        </div>
+                        <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
+                          <a href="{streetViewUrl}" target="_blank" rel="noreferrer" style="flex:1 1 auto;background:rgba(255,255,255,0.05);color:#cbd5f5;text-decoration:none;padding:6px 10px;border-radius:8px;font-size:11px;text-align:center;border:1px solid rgba(255,255,255,0.08);">Street view</a>
+                          <a href="{earthUrl}" target="_blank" rel="noreferrer" style="flex:1 1 auto;background:rgba(255,255,255,0.05);color:#cbd5f5;text-decoration:none;padding:6px 10px;border-radius:8px;font-size:11px;text-align:center;border:1px solid rgba(255,255,255,0.08);">Google Earth</a>
                         </div>
                       </div>
                     `,

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
 import {
   generateSchoolAiMission,
   SCHOOL_MISSION_PROMPT_VERSION,
@@ -16,10 +18,18 @@ const requestSchema = z.object({
   onlyMissing: z.boolean().default(true),
 });
 
-function authorized(req: Request): boolean {
-  if (!process.env.CRON_SECRET) return true;
-  const header = req.headers.get("authorization") ?? "";
-  return header === `Bearer ${process.env.CRON_SECRET}`;
+async function authorized(req: Request): Promise<boolean> {
+  // Cron / script path: bearer secret, if configured.
+  if (process.env.CRON_SECRET) {
+    const header = req.headers.get("authorization") ?? "";
+    if (header === `Bearer ${process.env.CRON_SECRET}`) return true;
+  } else {
+    // No secret configured means open access (local/dev).
+    return true;
+  }
+  // Browser path: any signed-in user can trigger their own ingest.
+  const session = await getServerSession(authOptions);
+  return Boolean(session?.user);
 }
 
 async function buildInput(slug: string): Promise<{
@@ -105,7 +115,7 @@ async function ensureMissionFor(
 }
 
 export async function POST(req: Request) {
-  if (!authorized(req)) {
+  if (!(await authorized(req))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -167,15 +177,33 @@ export async function POST(req: Request) {
   });
 }
 
-export async function GET() {
-  const stats = await prisma.schoolAiMissionProfile.aggregate({
-    _count: true,
-  });
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const listMissing = url.searchParams.get("listMissing") === "true";
+  const stats = await prisma.schoolAiMissionProfile.aggregate({ _count: true });
   const totalSchools = await prisma.school.count();
-  const missingCount = totalSchools - (stats._count ?? 0);
+  const profiledSchools = stats._count ?? 0;
+  const missingCount = totalSchools - profiledSchools;
+
+  if (!listMissing) {
+    return NextResponse.json({ totalSchools, profiledSchools, missingCount });
+  }
+
+  const missing = await prisma.school.findMany({
+    where: {
+      OR: [
+        { aiMissionProfile: null },
+        { aiMissionProfile: { promptVersion: { not: SCHOOL_MISSION_PROMPT_VERSION } } },
+      ],
+    },
+    select: { slug: true, name: true, state: true },
+    orderBy: [{ state: "asc" }, { name: "asc" }],
+  });
+
   return NextResponse.json({
     totalSchools,
-    profiledSchools: stats._count,
+    profiledSchools,
     missingCount,
+    missing,
   });
 }

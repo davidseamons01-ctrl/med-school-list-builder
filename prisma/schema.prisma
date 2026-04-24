@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+model School {
+  id                  String    @id @default(cuid())
+  slug                String    @unique
+  name                String
+  city                String
+  state               String
+  control             String    @default("PRIVATE")
+  campusAddress       String?
+  zip                 String?
+  countyName          String?
+  countyFips          String?
+  lat                 Float?
+  lng                 Float?
+  websiteUrl          String?
+  admissionsUrl       String?
+  studentAffairsUrl   String?
+  financialAidUrl     String?
+  secondaryPromptsUrl String?
+  missionTagNotes     String?
+  residencyBiasNotes  String?
+  searchAliasesJson   String?
+  lastVerifiedAt      DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  facts       SchoolFact[]
+  listEntries SchoolListEntry[]
+  resources   SchoolResource[]
+}
+
+model SchoolFact {
+  id          String   @id @default(cuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  key         String
+  category    String
+  label       String
+  valueJson   String
+  valueType   String   @default("number")
+  unit        String?
+  sourceType  String
+  sourceLabel String?
+  sourceUrl   String?
+  retrievedAt DateTime?
+  isVerified  Boolean  @default(false)
+  isSeeded    Boolean  @default(false)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([schoolId, key])
+  @@index([schoolId, category])
+  @@index([schoolId, key])
+}
+
+model ApplicantProfile {
+  id          String   @id @default(cuid())
+  displayName String?
+  statsJson   String
+  prefsJson   String
+  weightsJson String
+  warsJson    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lists SchoolList[]
+}
+
+model SchoolList {
+  id        String   @id @default(cuid())
+  name      String
+  profileId String?
+  profile   ApplicantProfile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  entries SchoolListEntry[]
+}
+
+model SchoolListEntry {
+  id                 String   @id @default(cuid())
+  listId             String
+  list               SchoolList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  schoolId           String
+  school             School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  tier               String
+  tierOverride       Boolean    @default(false)
+  applyStatus        String     @default("NONE")
+  compositeScore     Float?
+  scoreBreakdownJson String?
+  notes              String?
+  checklistJson      String?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  @@unique([listId, schoolId])
+  @@index([listId, tier])
+}
+
+model SchoolResource {
+  id          String   @id @default(cuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  category    String
+  kind        String
+  provider    String
+  label       String
+  url         String
+  description String?
+  isSeeded    Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([schoolId, category])
+  @@index([schoolId, kind])
+}

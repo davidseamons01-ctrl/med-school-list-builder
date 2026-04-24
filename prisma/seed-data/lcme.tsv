@@ -1,0 +1,164 @@
+state	city	name	control
+Alabama	Birmingham	University of Alabama at Birmingham Marnix E. Heersink School of Medicine	public
+Alabama	Mobile	Frederick P. Whiddon College of Medicine at the University of South Alabama	public
+Arizona	Tempe	ASU John Shufeldt School of Medicine and Medical Engineering	public
+Arizona	Phoenix	University of Arizona College of Medicine - Phoenix	public
+Arizona	Tucson	University of Arizona College of Medicine - Tucson	public
+Arkansas	Bentonville	Alice L. Walton School of Medicine	private
+Arkansas	Little Rock	University of Arkansas for Medical Sciences College of Medicine	public
+California	Elk Grove	California Northstate University College of Medicine	private
+California	Colton	California University of Science and Medicine - School of Medicine	private
+California	Los Angeles	Charles R. Drew University of Medicine and Science College of Medicine	private
+California	Los Angeles	David Geffen School of Medicine at UCLA	public
+California	Pasadena	Kaiser Permanente Bernard J. Tyson School of Medicine	private
+California	Los Angeles	Keck School of Medicine of the University of Southern California	private
+California	Loma Linda	Loma Linda University School of Medicine	private
+California	Stanford	Stanford University School of Medicine	private
+California	Davis	University of California, Davis School of Medicine	public
+California	Irvine	University of California, Irvine School of Medicine	public
+California	Riverside	University of California, Riverside School of Medicine	public
+California	La Jolla	University of California, San Diego School of Medicine	public
+California	San Francisco	University of California, San Francisco School of Medicine	public
+Colorado	Aurora	University of Colorado School of Medicine	public
+Connecticut	North Haven	Frank H. Netter MD School of Medicine at Quinnipiac University	private
+Connecticut	Farmington	University of Connecticut School of Medicine	public
+Connecticut	New Haven	Yale School of Medicine	private
+District of Columbia	Washington	George Washington University School of Medicine & Health Sciences	private
+District of Columbia	Washington	Georgetown University School of Medicine	private
+District of Columbia	Washington	Howard University College of Medicine	private
+Florida	Boca Raton	Charles E. Schmidt College of Medicine at Florida Atlantic University	public
+Florida	Miami	Florida International University Herbert Wertheim College of Medicine	public
+Florida	Tallahassee	Florida State University College of Medicine	public
+Florida	Fort Lauderdale	Nova Southeastern University Dr. Kiran C. Patel College of Allopathic Medicine	private
+Florida	Orlando	University of Central Florida College of Medicine	public
+Florida	Gainesville	University of Florida College of Medicine	public
+Florida	Miami	University of Miami Leonard M. Miller School of Medicine	private
+Florida	Tampa	USF Health Morsani College of Medicine	public
+Georgia	Atlanta	Emory University School of Medicine	private
+Georgia	Augusta	Medical College of Georgia at Augusta University	public
+Georgia	Macon	Mercer University School of Medicine	private
+Georgia	Atlanta	Morehouse School of Medicine	private
+Georgia	Athens	University of Georgia School of Medicine	public
+Hawaii	Honolulu	John A. Burns School of Medicine University of Hawaii at Manoa	public
+Illinois	Urbana-Champaign	Carle Illinois College of Medicine at the University of Illinois Urbana-Champaign	public
+Illinois	North Chicago	Chicago Medical School at Rosalind Franklin University of Medicine & Science	private
+Illinois	Chicago	Loyola University Chicago Stritch School of Medicine	private
+Illinois	Chicago	Northwestern University Feinberg School of Medicine	private
+Illinois	Chicago	Rush Medical College of Rush University Medical Center	private
+Illinois	Springfield	Southern Illinois University School of Medicine	public
+Illinois	Chicago	University of Chicago Pritzker School of Medicine	private
+Illinois	Chicago	University of Illinois College of Medicine	public
+Indiana	Indianapolis	Indiana University School of Medicine	public
+Iowa	Iowa City	University of Iowa Roy J. and Lucille A. Carver College of Medicine	public
+Kansas	Kansas City	University of Kansas School of Medicine	public
+Kentucky	Lexington	University of Kentucky College of Medicine	public
+Kentucky	Louisville	University of Louisville School of Medicine	public
+Louisiana	New Orleans	LSU Health Sciences Center School of Medicine in New Orleans	public
+Louisiana	Shreveport	Louisiana State University School of Medicine in Shreveport	public
+Louisiana	New Orleans	Tulane University School of Medicine	private
+Maryland	Baltimore	Johns Hopkins University School of Medicine	private
+Maryland	Bethesda	Uniformed Services University of the Health Sciences, F. Edward Hébert School of Medicine	federal
+Maryland	Baltimore	University of Maryland School of Medicine	public
+Massachusetts	Boston	Boston University Aram V. Chobanian & Edward Avedisian School of Medicine	private
+Massachusetts	Boston	Harvard Medical School	private
+Massachusetts	Worcester	University of Massachusetts T.H. Chan School of Medicine	public
+Massachusetts	Boston	Tufts University School of Medicine	private
+Michigan	Mount Pleasant	Covenant HealthCare College of Medicine at Central Michigan University	public
+Michigan	East Lansing	Michigan State University College of Human Medicine	public
+Michigan	Rochester	Oakland University William Beaumont School of Medicine	private
+Michigan	Ann Arbor	University of Michigan Medical School	public
+Michigan	Detroit	Wayne State University School of Medicine	public
+Michigan	Kalamazoo	Western Michigan University Homer Stryker M.D. School of Medicine	private
+Minnesota	Rochester	Mayo Clinic Alix School of Medicine	private
+Minnesota	Minneapolis	University of Minnesota Medical School	public
+Mississippi	Jackson	University of Mississippi School of Medicine	public
+Missouri	St. Louis	Saint Louis University School of Medicine	private
+Missouri	Columbia	University of Missouri-Columbia School of Medicine	public
+Missouri	Kansas City	University of Missouri-Kansas City School of Medicine	public
+Missouri	St. Louis	Washington University in St. Louis School of Medicine	private
+Nebraska	Omaha	Creighton University School of Medicine	private
+Nebraska	Omaha	University of Nebraska College of Medicine	public
+Nevada	Las Vegas	Kirk Kerkorian School of Medicine at UNLV	public
+Nevada	Las Vegas	Roseman University College of Medicine	private
+Nevada	Reno	University of Nevada, Reno School of Medicine	public
+New Hampshire	Hanover	Geisel School of Medicine at Dartmouth	private
+New Jersey	Camden	Cooper Medical School of Rowan University	public
+New Jersey	Nutley	Hackensack Meridian School of Medicine	private
+New Jersey	Newark	Rutgers New Jersey Medical School	public
+New Jersey	Piscataway	Rutgers, Robert Wood Johnson Medical School	public
+New Mexico	Albuquerque	University of New Mexico School of Medicine	public
+New York	Albany	Albany Medical College	private
+New York	New York	Albert Einstein College of Medicine	private
+New York	New York	Columbia University Vagelos College of Physicians and Surgeons	private
+New York	New York	CUNY School of Medicine	public
+New York	Hempstead	Donald and Barbara Zucker School of Medicine at Hofstra/Northwell	private
+New York	New York	Icahn School of Medicine at Mount Sinai	private
+New York	Buffalo	Jacobs School of Medicine and Biomedical Sciences at the University at Buffalo	public
+New York	Mineola	NYU Grossman Long Island School of Medicine	private
+New York	New York	NYU Grossman School of Medicine	private
+New York	Valhalla	New York Medical College	private
+New York	Stony Brook	Renaissance School of Medicine at Stony Brook University	public
+New York	Brooklyn	SUNY Downstate Health Sciences University College of Medicine	public
+New York	Syracuse	State University of New York Upstate Medical University Alan and Marlene Norton College of Medicine	public
+New York	Rochester	University of Rochester School of Medicine and Dentistry	private
+New York	New York	Weill Cornell Medicine	private
+North Carolina	Fayetteville	Methodist University Cape Fear Valley Health School of Medicine	private
+North Carolina	Greenville	Brody School of Medicine at East Carolina University	public
+North Carolina	Durham	Duke University School of Medicine	private
+North Carolina	Chapel Hill	University of North Carolina School of Medicine	public
+North Carolina	Winston-Salem	Wake Forest University School of Medicine	private
+North Dakota	Grand Forks	University of North Dakota School of Medicine and Health Sciences	public
+Ohio	Dayton	Boonshoft School of Medicine Wright State University	public
+Ohio	Cleveland	Case Western Reserve University School of Medicine	private
+Ohio	Rootstown	Northeast Ohio Medical University College of Medicine	public
+Ohio	Columbus	The Ohio State University College of Medicine	public
+Ohio	Cincinnati	University of Cincinnati College of Medicine	public
+Ohio	Toledo	University of Toledo College of Medicine and Life Sciences	public
+Oklahoma	Oklahoma City	University of Oklahoma College of Medicine	public
+Oregon	Portland	Oregon Health & Science University School of Medicine	public
+Pennsylvania	Philadelphia	Drexel University College of Medicine	private
+Pennsylvania	Scranton	Geisinger Commonwealth School of Medicine	private
+Pennsylvania	Philadelphia	Lewis Katz School of Medicine at Temple University	public
+Pennsylvania	Hershey	Penn State College of Medicine	public
+Pennsylvania	Philadelphia	Raymond and Ruth Perelman School of Medicine at the University of Pennsylvania	private
+Pennsylvania	Philadelphia	Sidney Kimmel Medical College at Thomas Jefferson University	private
+Pennsylvania	Pittsburgh	University of Pittsburgh School of Medicine	public
+Puerto Rico	Ponce	Ponce Health Sciences University School of Medicine	private
+Puerto Rico	San Juan	San Juan Bautista School of Medicine	private
+Puerto Rico	Bayamon	Universidad Central del Caribe School of Medicine	private
+Puerto Rico	San Juan	University of Puerto Rico School of Medicine	public
+Rhode Island	Providence	The Warren Alpert Medical School of Brown University	private
+South Carolina	Charleston	Medical University of South Carolina College of Medicine	public
+South Carolina	Columbia	University of South Carolina School of Medicine, Columbia	public
+South Carolina	Greenville	University of South Carolina School of Medicine, Greenville	public
+South Dakota	Vermillion	University of South Dakota Sanford School of Medicine	public
+Tennessee	Johnson City	East Tennessee State University James H. Quillen College of Medicine	public
+Tennessee	Nashville	Meharry Medical College School of Medicine	private
+Tennessee	Nashville	Thomas F. Frist, Jr. College of Medicine at Belmont University	private
+Tennessee	Memphis	University of Tennessee Health Science Center College of Medicine	public
+Tennessee	Nashville	Vanderbilt University School of Medicine	private
+Texas	Fort Worth	Anne Burnett Marion School of Medicine at Texas Christian University	private
+Texas	Houston	Baylor College of Medicine	private
+Texas	Austin	Dell Medical School – University of Texas at Austin	public
+Texas	Houston	McGovern Medical School at UTHealth Houston	public
+Texas	El Paso	Paul L. Foster School of Medicine Texas Tech University Health Sciences Center at El Paso	public
+Texas	College Station	Texas A&M University School of Medicine	public
+Texas	Lubbock	Texas Tech University Health Sciences Center School of Medicine	public
+Texas	San Antonio	The University of Texas at San Antonio Joe R. and Teresa Lozano Long School of Medicine	public
+Texas	Tyler	The University of Texas at Tyler School of Medicine	public
+Texas	Houston	University of Houston Tilman J. Fertitta Family College of Medicine	public
+Texas	Galveston	University of Texas Medical Branch John Sealy School of Medicine	public
+Texas	Edinburg	University of Texas Rio Grande Valley School of Medicine	public
+Texas	Dallas	University of Texas Southwestern Medical School	public
+Utah	Salt Lake City	Spencer Fox Eccles School of Medicine at the University of Utah	public
+Vermont	Burlington	Robert Larner, M.D. College of Medicine at the University of Vermont	public
+Virginia	Norfolk	Eastern Virginia Medical School at Old Dominion University	public
+Virginia	Charlottesville	University of Virginia School of Medicine	public
+Virginia	Richmond	Virginia Commonwealth University School of Medicine	public
+Virginia	Roanoke	Virginia Tech Carilion School of Medicine	private
+Washington	Seattle	University of Washington School of Medicine	public
+Washington	Spokane	Washington State University Elson S. Floyd College of Medicine	public
+West Virginia	Huntington	Marshall University Joan C. Edwards School of Medicine	public
+West Virginia	Morgantown	West Virginia University School of Medicine	public
+Wisconsin	Milwaukee	Medical College of Wisconsin	private
+Wisconsin	Madison	University of Wisconsin School of Medicine and Public Health	public

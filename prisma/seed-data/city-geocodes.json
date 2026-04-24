@@ -1,0 +1,667 @@
+{
+  "Birmingham|Alabama": {
+    "lat": 33.5228587,
+    "lng": -86.8077052,
+    "match": "Birmingham, Alabama"
+  },
+  "Mobile|Alabama": {
+    "lat": 30.688943,
+    "lng": -88.044822,
+    "match": "Mobile, Alabama"
+  },
+  "Tempe|Arizona": {
+    "lat": 33.4255215,
+    "lng": -111.9412528,
+    "match": "Tempe, Arizona"
+  },
+  "Phoenix|Arizona": {
+    "lat": 33.448204,
+    "lng": -112.0725848,
+    "match": "Phoenix, Arizona"
+  },
+  "Tucson|Arizona": {
+    "lat": 32.221878,
+    "lng": -110.971225,
+    "match": "Tucson, Arizona"
+  },
+  "Bentonville|Arkansas": {
+    "lat": 36.371868,
+    "lng": -94.202721,
+    "match": "Bentonville, Arkansas"
+  },
+  "Little Rock|Arkansas": {
+    "lat": 34.748745,
+    "lng": -92.275105,
+    "match": "Little Rock, Arkansas"
+  },
+  "Elk Grove|California": {
+    "lat": 38.418131,
+    "lng": -121.39326,
+    "match": "Elk Grove, California"
+  },
+  "Colton|California": {
+    "lat": 34.0701393,
+    "lng": -117.3236413,
+    "match": "Colton, California"
+  },
+  "Los Angeles|California": {
+    "lat": 34.052238,
+    "lng": -118.243344,
+    "match": "Los Angeles, California"
+  },
+  "Pasadena|California": {
+    "lat": 34.14955,
+    "lng": -118.141452,
+    "match": "Pasadena, California"
+  },
+  "Loma Linda|California": {
+    "lat": 34.0493234,
+    "lng": -117.261123,
+    "match": "Loma Linda, California"
+  },
+  "Stanford|California": {
+    "lat": 37.4375162,
+    "lng": -122.1657468,
+    "match": "Stanford, California"
+  },
+  "Davis|California": {
+    "lat": 38.546725,
+    "lng": -121.744338,
+    "match": "Davis, California"
+  },
+  "Irvine|California": {
+    "lat": 33.685908,
+    "lng": -117.824719,
+    "match": "Irvine, California"
+  },
+  "Riverside|California": {
+    "lat": 33.980534,
+    "lng": -117.377025,
+    "match": "Riverside, California"
+  },
+  "La Jolla|California": {
+    "lat": 32.8419914,
+    "lng": -117.2730168,
+    "match": "La Jolla, San Diego, California"
+  },
+  "San Francisco|California": {
+    "lat": 37.7800771,
+    "lng": -122.4201615,
+    "match": "San Francisco, California"
+  },
+  "Aurora|Colorado": {
+    "lat": 39.7129336,
+    "lng": -104.8195761,
+    "match": "Aurora, Colorado"
+  },
+  "North Haven|Connecticut": {
+    "lat": 41.388683,
+    "lng": -72.8608944,
+    "match": "North Haven, Connecticut"
+  },
+  "Farmington|Connecticut": {
+    "lat": 41.726536,
+    "lng": -72.8250564,
+    "match": "Farmington, Connecticut"
+  },
+  "New Haven|Connecticut": {
+    "lat": 41.3082517,
+    "lng": -72.9241605,
+    "match": "New Haven, Connecticut"
+  },
+  "Washington|District of Columbia": {
+    "lat": 38.8920621,
+    "lng": -77.0199124,
+    "match": "Washington, District of Columbia"
+  },
+  "Boca Raton|Florida": {
+    "lat": 26.350568,
+    "lng": -80.0899135,
+    "match": "Boca Raton, Florida"
+  },
+  "Miami|Florida": {
+    "lat": 25.775084,
+    "lng": -80.194702,
+    "match": "Miami, Florida"
+  },
+  "Tallahassee|Florida": {
+    "lat": 30.440741,
+    "lng": -84.278328,
+    "match": "Tallahassee, Florida"
+  },
+  "Fort Lauderdale|Florida": {
+    "lat": 26.1241631,
+    "lng": -80.1435862,
+    "match": "Fort Lauderdale, Florida"
+  },
+  "Orlando|Florida": {
+    "lat": 28.538331,
+    "lng": -81.378879,
+    "match": "Orlando, Florida"
+  },
+  "Gainesville|Florida": {
+    "lat": 29.6519756,
+    "lng": -82.3250209,
+    "match": "Gainesville, Florida"
+  },
+  "Tampa|Florida": {
+    "lat": 27.947423,
+    "lng": -82.458776,
+    "match": "Tampa, Florida"
+  },
+  "Atlanta|Georgia": {
+    "lat": 33.748547,
+    "lng": -84.391502,
+    "match": "Atlanta, Georgia"
+  },
+  "Augusta|Georgia": {
+    "lat": 33.472494,
+    "lng": -81.964397,
+    "match": "Augusta, Georgia"
+  },
+  "Macon|Georgia": {
+    "lat": 32.8360926,
+    "lng": -83.6316511,
+    "match": "Macon, Georgia"
+  },
+  "Athens|Georgia": {
+    "lat": 33.957412,
+    "lng": -83.376798,
+    "match": "Athens, Georgia"
+  },
+  "Honolulu|Hawaii": {
+    "lat": 21.30992,
+    "lng": -157.858158,
+    "match": "Honolulu, Hawaii"
+  },
+  "Urbana-Champaign|Illinois": {
+    "lat": 40.112458,
+    "lng": -88.207457,
+    "match": "Urbana, Illinois"
+  },
+  "North Chicago|Illinois": {
+    "lat": 42.3194045,
+    "lng": -87.8560966,
+    "match": "North Chicago, Illinois"
+  },
+  "Chicago|Illinois": {
+    "lat": 41.883229,
+    "lng": -87.632398,
+    "match": "Chicago, Illinois"
+  },
+  "Springfield|Illinois": {
+    "lat": 39.79936,
+    "lng": -89.643624,
+    "match": "Springfield, Illinois"
+  },
+  "Indianapolis|Indiana": {
+    "lat": 39.76845,
+    "lng": -86.156212,
+    "match": "Indianapolis, Indiana"
+  },
+  "Iowa City|Iowa": {
+    "lat": 41.6612397,
+    "lng": -91.5301283,
+    "match": "Iowa City, Iowa"
+  },
+  "Kansas City|Kansas": {
+    "lat": 39.1127,
+    "lng": -94.626804,
+    "match": "Kansas City, Kansas"
+  },
+  "Lexington|Kentucky": {
+    "lat": 38.046356,
+    "lng": -84.497021,
+    "match": "Lexington, Kentucky"
+  },
+  "Louisville|Kentucky": {
+    "lat": 38.256078,
+    "lng": -85.751569,
+    "match": "Louisville, Kentucky"
+  },
+  "New Orleans|Louisiana": {
+    "lat": 29.9517634,
+    "lng": -90.0746168,
+    "match": "New Orleans, Louisiana"
+  },
+  "Shreveport|Louisiana": {
+    "lat": 32.51425,
+    "lng": -93.7477715,
+    "match": "Shreveport, Louisiana"
+  },
+  "Baltimore|Maryland": {
+    "lat": 39.290443,
+    "lng": -76.612333,
+    "match": "Baltimore, Maryland"
+  },
+  "Bethesda|Maryland": {
+    "lat": 38.984854,
+    "lng": -77.092689,
+    "match": "Bethesda, Maryland"
+  },
+  "Boston|Massachusetts": {
+    "lat": 42.3589942,
+    "lng": -71.0586293,
+    "match": "Boston, Massachusetts"
+  },
+  "Worcester|Massachusetts": {
+    "lat": 42.2621176,
+    "lng": -71.8022386,
+    "match": "Worcester, Massachusetts"
+  },
+  "Mount Pleasant|Michigan": {
+    "lat": 43.598106,
+    "lng": -84.767574,
+    "match": "Mount Pleasant, Michigan"
+  },
+  "East Lansing|Michigan": {
+    "lat": 42.746876,
+    "lng": -84.483698,
+    "match": "East Lansing, Michigan"
+  },
+  "Rochester|Michigan": {
+    "lat": 42.682057,
+    "lng": -83.133822,
+    "match": "Rochester, Michigan"
+  },
+  "Ann Arbor|Michigan": {
+    "lat": 42.2814189,
+    "lng": -83.7484779,
+    "match": "Ann Arbor, Michigan"
+  },
+  "Detroit|Michigan": {
+    "lat": 42.3329407,
+    "lng": -83.0478365,
+    "match": "Detroit, Michigan"
+  },
+  "Kalamazoo|Michigan": {
+    "lat": 42.289777,
+    "lng": -85.584682,
+    "match": "Kalamazoo, Michigan"
+  },
+  "Rochester|Minnesota": {
+    "lat": 44.019331,
+    "lng": -92.458867,
+    "match": "Rochester, Minnesota"
+  },
+  "Minneapolis|Minnesota": {
+    "lat": 44.9774859,
+    "lng": -93.2643669,
+    "match": "Minneapolis, Minnesota"
+  },
+  "Jackson|Mississippi": {
+    "lat": 32.302897,
+    "lng": -90.183488,
+    "match": "Jackson, Mississippi"
+  },
+  "St. Louis|Missouri": {
+    "lat": 38.635355,
+    "lng": -90.2009855,
+    "match": "St. Louis, Missouri"
+  },
+  "Columbia|Missouri": {
+    "lat": 38.951551,
+    "lng": -92.328594,
+    "match": "Columbia, Missouri"
+  },
+  "Kansas City|Missouri": {
+    "lat": 39.099792,
+    "lng": -94.578559,
+    "match": "Kansas City, Missouri"
+  },
+  "Omaha|Nebraska": {
+    "lat": 41.258652,
+    "lng": -95.937195,
+    "match": "Omaha, Nebraska"
+  },
+  "Las Vegas|Nevada": {
+    "lat": 36.1690921,
+    "lng": -115.1405767,
+    "match": "Las Vegas, Nevada"
+  },
+  "Reno|Nevada": {
+    "lat": 39.526903,
+    "lng": -119.813283,
+    "match": "Reno, Nevada"
+  },
+  "Hanover|New Hampshire": {
+    "lat": 43.7008641,
+    "lng": -72.2894013,
+    "match": "Hanover, New Hampshire"
+  },
+  "Camden|New Jersey": {
+    "lat": 39.945208,
+    "lng": -75.118833,
+    "match": "Camden, New Jersey"
+  },
+  "Nutley|New Jersey": {
+    "lat": 40.815083,
+    "lng": -74.162523,
+    "match": "Nutley, New Jersey"
+  },
+  "Newark|New Jersey": {
+    "lat": 40.731507,
+    "lng": -74.1743877,
+    "match": "Newark, New Jersey"
+  },
+  "Piscataway|New Jersey": {
+    "lat": 40.543875,
+    "lng": -74.474116,
+    "match": "Piscataway, New Jersey"
+  },
+  "Albuquerque|New Mexico": {
+    "lat": 35.084248,
+    "lng": -106.649241,
+    "match": "Albuquerque, New Mexico"
+  },
+  "Albany|New York": {
+    "lat": 42.651725,
+    "lng": -73.755093,
+    "match": "Albany, New York"
+  },
+  "New York|New York": {
+    "lat": 40.7130466,
+    "lng": -74.0072301,
+    "match": "New York"
+  },
+  "Hempstead|New York": {
+    "lat": 40.7069,
+    "lng": -73.620349,
+    "match": "Hempstead, New York"
+  },
+  "Buffalo|New York": {
+    "lat": 42.887691,
+    "lng": -78.879374,
+    "match": "Buffalo, New York"
+  },
+  "Mineola|New York": {
+    "lat": 40.74607,
+    "lng": -73.63462,
+    "match": "Mineola, New York"
+  },
+  "Valhalla|New York": {
+    "lat": 41.080281,
+    "lng": -73.776807,
+    "match": "Valhalla, New York"
+  },
+  "Stony Brook|New York": {
+    "lat": 40.925686,
+    "lng": -73.141129,
+    "match": "Stony Brook, New York"
+  },
+  "Brooklyn|New York": {
+    "lat": 40.692529,
+    "lng": -73.990996,
+    "match": "Brooklyn, New York"
+  },
+  "Syracuse|New York": {
+    "lat": 43.047945,
+    "lng": -76.147448,
+    "match": "Syracuse, New York"
+  },
+  "Rochester|New York": {
+    "lat": 43.155708,
+    "lng": -77.612547,
+    "match": "Rochester, New York"
+  },
+  "Fayetteville|North Carolina": {
+    "lat": 35.054417,
+    "lng": -78.883659,
+    "match": "Fayetteville, North Carolina"
+  },
+  "Greenville|North Carolina": {
+    "lat": 35.611332,
+    "lng": -77.3741,
+    "match": "Greenville, North Carolina"
+  },
+  "Durham|North Carolina": {
+    "lat": 35.996948,
+    "lng": -78.899023,
+    "match": "Durham, North Carolina"
+  },
+  "Chapel Hill|North Carolina": {
+    "lat": 35.910262,
+    "lng": -79.055474,
+    "match": "Chapel Hill, North Carolina"
+  },
+  "Winston-Salem|North Carolina": {
+    "lat": 36.096261,
+    "lng": -80.243735,
+    "match": "Winston-Salem, North Carolina"
+  },
+  "Grand Forks|North Dakota": {
+    "lat": 47.925705,
+    "lng": -97.036068,
+    "match": "Grand Forks, North Dakota"
+  },
+  "Dayton|Ohio": {
+    "lat": 39.760982,
+    "lng": -84.192203,
+    "match": "Dayton, Ohio"
+  },
+  "Cleveland|Ohio": {
+    "lat": 41.5051414,
+    "lng": -81.6914575,
+    "match": "Cleveland, Ohio"
+  },
+  "Rootstown|Ohio": {
+    "lat": 41.099143,
+    "lng": -81.237297,
+    "match": "Rootstown, Ohio"
+  },
+  "Columbus|Ohio": {
+    "lat": 39.962762,
+    "lng": -82.996291,
+    "match": "Columbus, Ohio"
+  },
+  "Cincinnati|Ohio": {
+    "lat": 39.12711,
+    "lng": -84.51439,
+    "match": "Cincinnati, Ohio"
+  },
+  "Toledo|Ohio": {
+    "lat": 41.655298,
+    "lng": -83.535717,
+    "match": "Toledo, Ohio"
+  },
+  "Oklahoma City|Oklahoma": {
+    "lat": 35.468494,
+    "lng": -97.521264,
+    "match": "Oklahoma City, Oklahoma"
+  },
+  "Portland|Oregon": {
+    "lat": 45.516018,
+    "lng": -122.681425,
+    "match": "Portland, Oregon"
+  },
+  "Philadelphia|Pennsylvania": {
+    "lat": 39.9510605,
+    "lng": -75.1656204,
+    "match": "Philadelphia, Pennsylvania"
+  },
+  "Scranton|Pennsylvania": {
+    "lat": 41.409119,
+    "lng": -75.6623889,
+    "match": "Scranton, Pennsylvania"
+  },
+  "Hershey|Pennsylvania": {
+    "lat": 40.284764,
+    "lng": -76.64926,
+    "match": "Hershey, Pennsylvania"
+  },
+  "Pittsburgh|Pennsylvania": {
+    "lat": 40.4421676,
+    "lng": -79.9949573,
+    "match": "Pittsburgh, Pennsylvania"
+  },
+  "Ponce|Puerto Rico": {
+    "lat": 18.0126282,
+    "lng": -66.6260381,
+    "match": "Ponce"
+  },
+  "San Juan|Puerto Rico": {
+    "lat": 18.466302,
+    "lng": -66.105229,
+    "match": "San Juan"
+  },
+  "Bayamon|Puerto Rico": {
+    "lat": 18.3988474,
+    "lng": -66.1582479,
+    "match": "Bayamón"
+  },
+  "Providence|Rhode Island": {
+    "lat": 41.824461,
+    "lng": -71.412747,
+    "match": "Providence, Rhode Island"
+  },
+  "Charleston|South Carolina": {
+    "lat": 32.77647,
+    "lng": -79.931027,
+    "match": "Charleston, South Carolina"
+  },
+  "Columbia|South Carolina": {
+    "lat": 34.009286,
+    "lng": -81.037094,
+    "match": "Columbia, South Carolina"
+  },
+  "Greenville|South Carolina": {
+    "lat": 34.850746,
+    "lng": -82.398964,
+    "match": "Greenville, South Carolina"
+  },
+  "Vermillion|South Dakota": {
+    "lat": 42.787576,
+    "lng": -96.926779,
+    "match": "Vermillion, South Dakota"
+  },
+  "Johnson City|Tennessee": {
+    "lat": 36.320959,
+    "lng": -82.341756,
+    "match": "Johnson City, Tennessee"
+  },
+  "Nashville|Tennessee": {
+    "lat": 36.1663493,
+    "lng": -86.7790541,
+    "match": "Nashville, Tennessee"
+  },
+  "Memphis|Tennessee": {
+    "lat": 35.1433781,
+    "lng": -90.0521356,
+    "match": "Memphis, Tennessee"
+  },
+  "Fort Worth|Texas": {
+    "lat": 32.749904,
+    "lng": -97.330339,
+    "match": "Fort Worth, Texas"
+  },
+  "Houston|Texas": {
+    "lat": 29.7608026,
+    "lng": -95.3695062,
+    "match": "Houston, Texas"
+  },
+  "Austin|Texas": {
+    "lat": 30.264979,
+    "lng": -97.746598,
+    "match": "Austin, Texas"
+  },
+  "El Paso|Texas": {
+    "lat": 31.7601062,
+    "lng": -106.4922918,
+    "match": "El Paso, Texas"
+  },
+  "College Station|Texas": {
+    "lat": 30.622373,
+    "lng": -96.32585,
+    "match": "College Station, Texas"
+  },
+  "Lubbock|Texas": {
+    "lat": 33.5836884,
+    "lng": -101.8549534,
+    "match": "Lubbock, Texas"
+  },
+  "San Antonio|Texas": {
+    "lat": 29.4251712,
+    "lng": -98.494614,
+    "match": "San Antonio, Texas"
+  },
+  "Tyler|Texas": {
+    "lat": 32.350763,
+    "lng": -95.300644,
+    "match": "Tyler, Texas"
+  },
+  "Galveston|Texas": {
+    "lat": 29.300128,
+    "lng": -94.795846,
+    "match": "Galveston, Texas"
+  },
+  "Edinburg|Texas": {
+    "lat": 26.299359,
+    "lng": -98.162704,
+    "match": "Edinburg, Texas"
+  },
+  "Dallas|Texas": {
+    "lat": 32.7779765,
+    "lng": -96.7962148,
+    "match": "Dallas, Texas"
+  },
+  "Salt Lake City|Utah": {
+    "lat": 40.758478,
+    "lng": -111.888142,
+    "match": "Salt Lake City, Utah"
+  },
+  "Burlington|Vermont": {
+    "lat": 44.4759918,
+    "lng": -73.2109954,
+    "match": "Burlington, Vermont"
+  },
+  "Norfolk|Virginia": {
+    "lat": 36.8461592,
+    "lng": -76.2858937,
+    "match": "Norfolk, Virginia"
+  },
+  "Charlottesville|Virginia": {
+    "lat": 38.0310605,
+    "lng": -78.4742794,
+    "match": "Charlottesville, Virginia"
+  },
+  "Richmond|Virginia": {
+    "lat": 37.540759,
+    "lng": -77.433932,
+    "match": "Richmond, Virginia"
+  },
+  "Roanoke|Virginia": {
+    "lat": 37.271133,
+    "lng": -79.939056,
+    "match": "Roanoke, Virginia"
+  },
+  "Seattle|Washington": {
+    "lat": 47.603229,
+    "lng": -122.33028,
+    "match": "Seattle, Washington"
+  },
+  "Spokane|Washington": {
+    "lat": 47.6589989,
+    "lng": -117.4250224,
+    "match": "Spokane, Washington"
+  },
+  "Huntington|West Virginia": {
+    "lat": 38.4191237,
+    "lng": -82.4452246,
+    "match": "Huntington, West Virginia"
+  },
+  "Morgantown|West Virginia": {
+    "lat": 39.6298107,
+    "lng": -79.955946,
+    "match": "Morgantown, West Virginia"
+  },
+  "Milwaukee|Wisconsin": {
+    "lat": 43.041072,
+    "lng": -87.909421,
+    "match": "Milwaukee, Wisconsin"
+  },
+  "Madison|Wisconsin": {
+    "lat": 43.073926,
+    "lng": -89.385244,
+    "match": "Madison, Wisconsin"
+  }
+}

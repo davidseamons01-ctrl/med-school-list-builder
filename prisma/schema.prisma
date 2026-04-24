@@ -29,34 +29,46 @@ model School {
   missionTagNotes     String?
   residencyBiasNotes  String?
   searchAliasesJson   String?
+  has3YearPathway     Boolean?
+  yieldProtectRisk    Boolean?
+  avgDaycareCost      Float?
   lastVerifiedAt      DateTime?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
-  facts       SchoolFact[]
-  listEntries SchoolListEntry[]
-  resources   SchoolResource[]
+  facts                SchoolFact[]
+  listEntries          SchoolListEntry[]
+  resources            SchoolResource[]
+  financialProfile     SchoolFinancialProfile?
+  costOfLivingProfile  SchoolCostOfLivingProfile?
+  strategyProfile      SchoolStrategyProfile?
+  neighborhoodSafeties NeighborhoodSafetyScore[]
+  neighborhoodSafety   NeighborhoodSafety[]
+  clinicalAffiliations ClinicalAffiliation[]
+  secondaryPrompts     SecondaryPrompt[]
+
+  @@index([state])
 }
 
 model SchoolFact {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   schoolId    String
-  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school      School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   key         String
   category    String
   label       String
   valueJson   String
-  valueType   String   @default("number")
+  valueType   String    @default("number")
   unit        String?
   sourceType  String
   sourceLabel String?
   sourceUrl   String?
   retrievedAt DateTime?
-  isVerified  Boolean  @default(false)
-  isSeeded    Boolean  @default(false)
+  isVerified  Boolean   @default(false)
+  isSeeded    Boolean   @default(false)
   notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@unique([schoolId, key])
   @@index([schoolId, category])
@@ -65,6 +77,8 @@ model SchoolFact {
 
 model ApplicantProfile {
   id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   displayName String?
   statsJson   String
   prefsJson   String
@@ -77,18 +91,18 @@ model ApplicantProfile {
 }
 
 model SchoolList {
-  id        String   @id @default(cuid())
+  id        String            @id @default(cuid())
   name      String
   profileId String?
   profile   ApplicantProfile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
 
   entries SchoolListEntry[]
 }
 
 model SchoolListEntry {
-  id                 String   @id @default(cuid())
+  id                 String     @id @default(cuid())
   listId             String
   list               SchoolList @relation(fields: [listId], references: [id], onDelete: Cascade)
   schoolId           String
@@ -123,4 +137,136 @@ model SchoolResource {
 
   @@index([schoolId, category])
   @@index([schoolId, kind])
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String?
+  email        String   @unique
+  passwordHash String?
+  image        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  profiles ApplicantProfile[]
+}
+
+model SchoolFinancialProfile {
+  id                              String   @id @default(cuid())
+  schoolId                        String   @unique
+  school                          School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  medianMcat                      Float?
+  medianCgpa                      Float?
+  tuitionResident                 Float?
+  tuitionNonResident              Float?
+  averageGraduateDebt             Float?
+  pctReceivingInstitutionalGrants Float?
+  currency                        String   @default("USD")
+  sourceLabel                     String?
+  sourceUrl                       String?
+  sourceEffectiveYear             Int?
+  updatedAt                       DateTime @updatedAt
+  createdAt                       DateTime @default(now())
+
+  @@index([medianMcat])
+  @@index([tuitionResident])
+  @@index([tuitionNonResident])
+  @@index([averageGraduateDebt])
+  @@index([pctReceivingInstitutionalGrants])
+}
+
+model SchoolCostOfLivingProfile {
+  id                              String    @id @default(cuid())
+  schoolId                        String    @unique
+  school                          School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  mitFamilyThreeMonthlyLivingWage Float?
+  hudTwoBedroomFairMarketRent     Float?
+  countyFipsUsed                  String?
+  zipCodeUsed                     String?
+  sourceLabel                     String?
+  sourceUrl                       String?
+  sourceRetrievedAt               DateTime?
+  updatedAt                       DateTime  @updatedAt
+  createdAt                       DateTime  @default(now())
+}
+
+model NeighborhoodSafetyScore {
+  id                   String    @id @default(cuid())
+  schoolId             String
+  school               School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  neighborhoodName     String?
+  zipCode              String?
+  safetyGrade          String?
+  areaVibesScore       Float?
+  fbiUcrViolentRate    Float?
+  fbiUcrPropertyRate   Float?
+  compositeSafetyScore Float?
+  sourceLabel          String?
+  sourceUrl            String?
+  sourceRetrievedAt    DateTime?
+  updatedAt            DateTime  @updatedAt
+  createdAt            DateTime  @default(now())
+
+  @@index([schoolId, safetyGrade])
+  @@index([zipCode])
+}
+
+model ClinicalAffiliation {
+  id              String   @id @default(cuid())
+  schoolId        String
+  school          School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  hospitalName    String
+  isLevel1Trauma  Boolean?
+  isSafetyNet     Boolean?
+  isVA            Boolean?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([schoolId, isLevel1Trauma])
+  @@index([schoolId, isSafetyNet])
+  @@index([schoolId, isVA])
+}
+
+model NeighborhoodSafety {
+  id                 String   @id @default(cuid())
+  schoolId           String
+  school             School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  violentCrimeGrade  String?
+  propertyCrimeGrade String?
+  rent2Bed           Float?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([schoolId, violentCrimeGrade])
+  @@index([schoolId, propertyCrimeGrade])
+}
+
+model SecondaryPrompt {
+  id         String   @id @default(cuid())
+  schoolId   String
+  school     School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  year       Int
+  promptText String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([schoolId, year])
+}
+
+model SchoolStrategyProfile {
+  id                     String    @id @default(cuid())
+  schoolId               String    @unique
+  school                 School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  hasThreeYearMdPathway  Boolean?
+  hasYieldProtectionFlag Boolean?
+  yieldProtectionReason  String?
+  strategyNotes          String?
+  sourceLabel            String?
+  sourceUrl              String?
+  sourceRetrievedAt      DateTime?
+  updatedAt              DateTime  @updatedAt
+  createdAt              DateTime  @default(now())
+
+  @@index([hasThreeYearMdPathway])
+  @@index([hasYieldProtectionFlag])
 }

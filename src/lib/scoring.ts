@@ -9,6 +9,18 @@ import type {
 } from "./types";
 import { TIER_BASELINE, TIER_REACH, TIER_TARGET } from "./types";
 
+type ScoreSchoolInput = Pick<
+  ExplorerSchool,
+  "state" | "control" | "missionTagNotes" | "facts"
+> & {
+  studentAffairsUrl?: string | null;
+  financialProfile?: ExplorerSchool["financialProfile"];
+  costOfLivingProfile?: ExplorerSchool["costOfLivingProfile"];
+  strategyProfile?: ExplorerSchool["strategyProfile"];
+  neighborhoodSafeties?: ExplorerSchool["neighborhoodSafeties"];
+  clinicalAffiliations?: ExplorerSchool["clinicalAffiliations"];
+};
+
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
@@ -59,6 +71,61 @@ export function getResidencyAwareAnnualCost(
     getFactNumber(facts, "aamc_2025_2026_total_nonresident") ??
     getFactNumber(facts, "aamc_2025_2026_total_resident")
   );
+}
+
+export function calculateTrueCostOfAttendance(input: {
+  tuition: number | null;
+  avgAid: number | null;
+  localRentMonthly: number | null;
+}): number | null {
+  if (input.tuition == null || input.localRentMonthly == null) return null;
+  const aid = input.avgAid ?? 0;
+  return Math.max(0, input.tuition - aid + input.localRentMonthly * 12);
+}
+
+function safetyGradeToScore(grade: string | null | undefined): number {
+  const normalized = (grade ?? "").toUpperCase().trim();
+  if (normalized === "A") return 10;
+  if (normalized === "B") return 8;
+  if (normalized === "C") return 6;
+  if (normalized === "D") return 4;
+  if (normalized === "F") return 2;
+  return 5;
+}
+
+export function calculateFamilySafetyNetScore(input: {
+  neighborhoodSafetyGrade?: string | null;
+  areaSafetyComposite?: number | null;
+  rentMonthly?: number | null;
+  spouseAssociations?: boolean;
+}): number {
+  const gradeScore = safetyGradeToScore(input.neighborhoodSafetyGrade);
+  const compositeSafety = input.areaSafetyComposite != null
+    ? Math.max(1, Math.min(10, input.areaSafetyComposite))
+    : gradeScore;
+  const rentPenalty = input.rentMonthly == null ? 0 : Math.min(2.5, Math.max(0, (input.rentMonthly - 1800) / 600));
+  const spouseBonus = input.spouseAssociations ? 1 : 0;
+  const score = Math.max(1, Math.min(10, (gradeScore + compositeSafety) / 2 - rentPenalty + spouseBonus));
+  return Number(score.toFixed(1));
+}
+
+export function calculateAcademicPowerhouseIndex(input: {
+  medianMcat: number | null;
+  medianCgpa: number | null;
+  researchFocusedApplicant: boolean;
+  traumaLevelCount: number;
+  safetyNetCount: number;
+  vaCount: number;
+  hasThreeYearPathway?: boolean | null;
+}): number {
+  const mcatSignal = input.medianMcat == null ? 0.5 : clamp01((input.medianMcat - 500) / 25);
+  const gpaSignal = input.medianCgpa == null ? 0.5 : clamp01((input.medianCgpa - 3.4) / 0.5);
+  const affiliationSignal = clamp01(
+    input.traumaLevelCount * 0.12 + input.safetyNetCount * 0.08 + input.vaCount * 0.08,
+  );
+  const pathwayPenalty = input.hasThreeYearPathway ? 0.04 : 0;
+  const applicantBoost = input.researchFocusedApplicant ? 0.08 : 0;
+  return clamp01((mcatSignal * 0.4 + gpaSignal * 0.25 + affiliationSignal * 0.35) + applicantBoost - pathwayPenalty);
 }
 
 export function lizzym(stats: ProfileStats): number {
@@ -139,18 +206,56 @@ function researchScore(control: string, prefs: ProfilePrefs): number {
   return control === "PRIVATE" ? 0.68 : 0.6;
 }
 
+function heuristicsVerdict(score01: number, flags: string[]): string {
+  if (flags.includes("oos_public_stat_penalty")) return "Caution: public OOS acceptance dynamics may materially reduce odds.";
+  if (flags.includes("yield_protection_risk")) return "High stats profile may trigger yield protection risk at some targets.";
+  if (score01 >= 0.8) return "Excellent holistic fit with strong mission and practical alignment.";
+  if (score01 >= 0.65) return "Strong fit overall with manageable trade-offs.";
+  if (score01 >= 0.5) return "Mixed fit: validate mission and location concerns before prioritizing.";
+  return "Low fit currently: likely a reach unless key constraints change.";
+}
+
 export function computeFitScore(input: {
   stats: ProfileStats;
   prefs: ProfilePrefs;
   weights: ProfileWeights;
   wars: WarsInputs;
-  school: Pick<ExplorerSchool, "state" | "control" | "missionTagNotes" | "facts">;
+  school: ScoreSchoolInput;
 }): { composite: number; breakdown: ScoreBreakdown; statTier: string; annualCost: number | null } {
   const weights = normalizeWeights(input.weights);
   const flags: string[] = [];
 
-  const medianMcat = getFactNumber(input.school.facts, "median_mcat");
-  const medianCgpa = getFactNumber(input.school.facts, "median_cgpa");
+  const medianMcat =
+    input.school.financialProfile?.medianMcat ??
+    getFactNumber(input.school.facts, "median_mcat");
+  const medianCgpa =
+    input.school.financialProfile?.medianCgpa ??
+    getFactNumber(input.school.facts, "median_cgpa");
+
+  const tuitionResident =
+    input.school.financialProfile?.tuitionResident ??
+    getFactNumber(input.school.facts, "aamc_2025_2026_total_resident");
+  const tuitionNonResident =
+    input.school.financialProfile?.tuitionNonResident ??
+    getFactNumber(input.school.facts, "aamc_2025_2026_total_nonresident");
+
+  const avgAidAmount = getFactNumber(input.school.facts, "avg_institutional_aid_amount");
+  const grantPct =
+    input.school.financialProfile?.pctReceivingInstitutionalGrants ??
+    getFactNumber(input.school.facts, "pct_receiving_aid");
+
+  const selectedTuition =
+    input.stats.residencyState.toUpperCase() === input.school.state.toUpperCase()
+      ? tuitionResident
+      : tuitionNonResident ?? tuitionResident;
+  const derivedAid = avgAidAmount ?? (selectedTuition != null && grantPct != null ? (selectedTuition * grantPct) / 100 : null);
+  const localRent = input.school.costOfLivingProfile?.hudTwoBedroomFairMarketRent ?? null;
+  const trueCoa = calculateTrueCostOfAttendance({
+    tuition: selectedTuition,
+    avgAid: derivedAid,
+    localRentMonthly: localRent,
+  });
+
   const annualCost = getResidencyAwareAnnualCost(
     input.school.facts,
     input.stats.residencyState,
@@ -167,6 +272,29 @@ export function computeFitScore(input: {
     flags.push("missing_official_mcat_gpa");
   }
 
+  const oosAcceptanceRate =
+    getFactNumber(input.school.facts, "oos_acceptance_rate") ??
+    getFactNumber(input.school.facts, "public_oos_acceptance_rate");
+  const isOutOfState =
+    input.stats.residencyState.trim().toUpperCase() !== input.school.state.trim().toUpperCase();
+  if (
+    input.school.control === "PUBLIC" &&
+    isOutOfState &&
+    oosAcceptanceRate != null &&
+    oosAcceptanceRate < 10
+  ) {
+    statsScore = clamp01(statsScore * 0.55);
+    flags.push("oos_public_stat_penalty");
+  }
+
+  if (
+    input.stats.mcat >= 522 &&
+    input.stats.cgpa >= 3.95 &&
+    (input.school.strategyProfile?.hasYieldProtectionFlag ?? false)
+  ) {
+    flags.push("yield_protection_risk");
+  }
+
   const mission = missionOverlapScore(input.school.missionTagNotes, input.prefs.missionTags);
   const cost = costFamilyScore({
     annualCost,
@@ -176,6 +304,26 @@ export function computeFitScore(input: {
   });
   const geography = geographyScore(input.school.state, input.prefs);
   const research = researchScore(input.school.control, input.prefs);
+  const spouseAssociations = Boolean(input.school.studentAffairsUrl);
+  const latestSafety = input.school.neighborhoodSafeties?.[0];
+  const familySafetyNet = calculateFamilySafetyNetScore({
+    neighborhoodSafetyGrade: latestSafety?.safetyGrade ?? null,
+    areaSafetyComposite: latestSafety?.compositeSafetyScore ?? latestSafety?.areaVibesScore ?? null,
+    rentMonthly: localRent,
+    spouseAssociations,
+  });
+  const academicPowerhouse = calculateAcademicPowerhouseIndex({
+    medianMcat,
+    medianCgpa,
+    researchFocusedApplicant: input.prefs.prestigeResearchWeight >= 4,
+    traumaLevelCount:
+      input.school.clinicalAffiliations?.filter((a) => Boolean(a.isLevel1Trauma)).length ?? 0,
+    safetyNetCount:
+      input.school.clinicalAffiliations?.filter((a) => Boolean(a.isSafetyNet)).length ?? 0,
+    vaCount: input.school.clinicalAffiliations?.filter((a) => Boolean(a.isVA)).length ?? 0,
+    hasThreeYearPathway: input.school.strategyProfile?.hasThreeYearMdPathway ?? null,
+  });
+
   const sources = coverageScore(input.school.facts);
   if (sources < 0.5) flags.push("limited_data_coverage");
   if (annualCost == null) flags.push("missing_cost_of_attendance");
@@ -187,16 +335,27 @@ export function computeFitScore(input: {
       weights.geography * geography +
       weights.research * research * (0.75 + 0.25 * sources),
   );
+  const holisticScore01 = clamp01(
+    composite * 0.65 + (familySafetyNet / 10) * 0.2 + academicPowerhouse * 0.15,
+  );
+  const holisticFitScore = Math.round(holisticScore01 * 100);
+  const aiVerdict = heuristicsVerdict(holisticScore01, flags);
 
   return {
-    composite,
-    annualCost,
+    composite: holisticScore01,
+    annualCost: trueCoa ?? annualCost,
     breakdown: {
       stats: statsScore,
       mission,
       colFamily: cost,
       geography,
       research,
+      trueCoa,
+      familySafetyNet,
+      academicPowerhouse,
+      statFit: statsScore,
+      holisticFitScore,
+      aiVerdict,
       sourceCoverage: sources,
       flags,
     },

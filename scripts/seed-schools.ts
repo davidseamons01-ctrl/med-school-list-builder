@@ -198,6 +198,17 @@ function workbookAliases(): Record<string, string> {
   };
 }
 
+function pickWorkbookCost(
+  rows: WorkbookFactRow[],
+  costType: "Tuition, Fees, and Health Insurance" | "Tuition" | "Fees" | "Health Insurance",
+  residenceStatus: "Resident" | "Nonresident",
+): number | null {
+  const row = rows.find(
+    (r) => r.costType === costType && r.residenceStatus === residenceStatus,
+  );
+  return row ? row.cost : null;
+}
+
 function controlValue(raw: string): string {
   if (raw === "public") return "PUBLIC";
   if (raw === "federal") return "FEDERAL";
@@ -437,6 +448,35 @@ export async function seedSchools(prisma: PrismaClient, rootDir: string) {
         },
       });
     }
+
+    const tuitionResident = pickWorkbookCost(
+      workbookRows,
+      "Tuition, Fees, and Health Insurance",
+      "Resident",
+    );
+    const tuitionNonResident = pickWorkbookCost(
+      workbookRows,
+      "Tuition, Fees, and Health Insurance",
+      "Nonresident",
+    );
+    await prisma.schoolFinancialProfile.upsert({
+      where: { schoolId: upserted.id },
+      create: {
+        schoolId: upserted.id,
+        tuitionResident,
+        tuitionNonResident,
+        sourceLabel: "AAMC Tuition and Student Fees Reports",
+        sourceUrl: AAMC_TUITION_DOWNLOAD,
+        sourceEffectiveYear: 2026,
+      },
+      update: {
+        tuitionResident,
+        tuitionNonResident,
+        sourceLabel: "AAMC Tuition and Student Fees Reports",
+        sourceUrl: AAMC_TUITION_DOWNLOAD,
+        sourceEffectiveYear: 2026,
+      },
+    });
 
     const resources = resourceTemplates({ ...school, slug, zip: upserted.zip });
     for (const [index, resource] of resources.entries()) {

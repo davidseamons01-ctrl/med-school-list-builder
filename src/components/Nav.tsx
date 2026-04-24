@@ -2,14 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Map, Search, SlidersHorizontal, TableProperties, Download, Compass } from "lucide-react";
+import { Map, Search, SlidersHorizontal, TableProperties, Download, Compass, KanbanSquare } from "lucide-react";
 import { clsx } from "clsx";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const items = [
   { href: "/", label: "Dashboard", icon: Compass },
   { href: "/onboarding", label: "Profile", icon: SlidersHorizontal },
   { href: "/schools", label: "Explorer", icon: Map },
   { href: "/compare", label: "Compare", icon: TableProperties },
+  { href: "/tracker", label: "Tracker", icon: KanbanSquare },
   { href: "/discover", label: "Research", icon: Search },
   { href: "/export", label: "Export", icon: Download },
 ];
@@ -28,7 +30,7 @@ export function Nav() {
             Research-dense planning for fit, cost, family life, and location.
           </p>
         </div>
-        <nav className="flex flex-wrap gap-2">
+        <nav className="flex flex-wrap items-center gap-2">
           {items.map((item) => {
             const Icon = item.icon;
             const active =
@@ -50,6 +52,7 @@ export function Nav() {
               </Link>
             );
           })}
+          <ThemeToggle />
         </nav>
       </div>
     </header>

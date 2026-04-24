@@ -1,14 +1,51 @@
 import Link from "next/link";
-import { getListEntriesAction, getProfileBundle, recomputeListScoresAction, updateListEntryFormAction } from "../actions";
-import { formatCurrency, formatPercent } from "@/lib/format";
-import { getResidencyAwareAnnualCost } from "@/lib/scoring";
+import { getListEntriesAction, recomputeListScoresAction } from "../actions";
+import { KanbanBoard } from "@/components/compare/KanbanBoard";
 
-const tiers = ["BASELINE", "TARGET", "REACH"] as const;
-const statuses = ["NONE", "CONSIDERING", "APPLY", "SECONDARY", "INTERVIEW", "ACCEPTED", "WITHDRAWN", "SKIP"] as const;
+function parseFactNumber(raw: string): number | null {
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed === "number" && Number.isFinite(parsed)) return parsed;
+    if (typeof parsed === "string") {
+      const n = Number(parsed);
+      return Number.isFinite(n) ? n : null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export default async function ComparePage() {
   const { entries } = await getListEntriesAction();
-  const { profile } = await getProfileBundle();
+  const rows = entries.map((entry) => {
+    const primaryFact = entry.school.facts.find((fact) => fact.key === "primary_application_fee");
+    const secondaryFact = entry.school.facts.find((fact) => fact.key === "secondary_application_fee");
+    const primaryFee = parseFactNumber(primaryFact?.valueJson ?? "") ?? 175;
+    const secondaryFee = parseFactNumber(secondaryFact?.valueJson ?? "") ?? 115;
+    let holisticFitScore: number | null = null;
+    try {
+      const parsed = JSON.parse(entry.scoreBreakdownJson ?? "{}") as { holisticFitScore?: number };
+      holisticFitScore = parsed.holisticFitScore ?? null;
+    } catch {
+      holisticFitScore = null;
+    }
+    return {
+      id: entry.id,
+      schoolId: entry.schoolId,
+      schoolSlug: entry.school.slug,
+      name: entry.school.name,
+      city: entry.school.city,
+      state: entry.school.state,
+      tier: entry.tier,
+      applyStatus: entry.applyStatus,
+      compositeScore: entry.compositeScore ?? 0,
+      holisticFitScore,
+      notes: entry.notes,
+      primaryFee,
+      secondaryFee,
+    };
+  });
 
   return (
     <div className="space-y-6">
@@ -36,111 +73,9 @@ export default async function ComparePage() {
           No schools saved yet. Start in the <Link href="/schools" className="text-cyan-300">explorer</Link>.
         </div>
       ) : (
-        <div className="grid gap-6 xl:grid-cols-3">
-          {tiers.map((tier) => (
-            <section key={tier} className="surface rounded-[2rem] p-4">
-              <div className="mb-4 flex items-center justify-between gap-4 px-2">
-                <div>
-                  <h2 className="text-lg font-semibold text-white">{tier}</h2>
-                  <p className="text-sm text-slate-400">
-                    {entries.filter((entry) => entry.tier === tier).length} schools
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                {entries
-                  .filter((entry) => entry.tier === tier)
-                  .map((entry) => {
-                    const annualCost = getResidencyAwareAnnualCost(
-                      entry.school.facts,
-                      profile.stats.residencyState,
-                      entry.school.state,
-                    );
-                    return (
-                      <article key={entry.id} className="rounded-[1.5rem] border border-white/8 bg-white/4 p-4">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <Link href={`/schools/${entry.school.slug}`} className="font-semibold text-white hover:text-cyan-200">
-                              {entry.school.name}
-                            </Link>
-                            <p className="mt-1 text-sm text-slate-400">
-                              {entry.school.city}, {entry.school.state}
-                            </p>
-                          </div>
-                          <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-200">
-                            {formatPercent(entry.compositeScore)}
-                          </span>
-                        </div>
-                        <div className="mt-4 flex flex-wrap gap-3 text-sm text-slate-300">
-                          <span>AAMC annual {formatCurrency(annualCost)}</span>
-                          <span>Status {entry.applyStatus.toLowerCase()}</span>
-                        </div>
-                        <form action={updateListEntryFormAction} className="mt-4 space-y-3">
-                          <input type="hidden" name="schoolId" value={entry.schoolId} />
-                          <div className="grid gap-3 sm:grid-cols-2">
-                            <label className="text-xs text-slate-400">
-                              Tier
-                              <select
-                                name="tier"
-                                defaultValue={entry.tier}
-                                className="mt-1 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-white"
-                              >
-                                {tiers.map((option) => (
-                                  <option key={option} value={option}>
-                                    {option}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                            <label className="text-xs text-slate-400">
-                              Status
-                              <select
-                                name="applyStatus"
-                                defaultValue={entry.applyStatus}
-                                className="mt-1 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-white"
-                              >
-                                {statuses.map((status) => (
-                                  <option key={status} value={status}>
-                                    {status}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                          </div>
-                          <label className="flex items-center gap-2 text-xs text-slate-400">
-                            <input type="hidden" name="tierOverride" value="off" />
-                            <input type="checkbox" name="tierOverride" value="on" defaultChecked={entry.tierOverride} />
-                            Pin this tier
-                          </label>
-                          <label className="block text-xs text-slate-400">
-                            Notes
-                            <textarea
-                              name="notes"
-                              rows={3}
-                              defaultValue={entry.notes ?? ""}
-                              className="mt-1 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-white"
-                            />
-                          </label>
-                          <label className="block text-xs text-slate-400">
-                            Checklist JSON
-                            <textarea
-                              name="checklistJson"
-                              rows={3}
-                              defaultValue={entry.checklistJson ?? ""}
-                              className="mt-1 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2 font-mono text-xs text-white"
-                            />
-                          </label>
-                          <button className="rounded-full border border-white/10 px-4 py-2 text-xs font-medium text-slate-200 hover:border-white/20 hover:bg-white/5">
-                            Save card
-                          </button>
-                        </form>
-                      </article>
-                    );
-                  })}
-              </div>
-            </section>
-          ))}
-        </div>
+        <section className="surface rounded-[2rem] p-4">
+          <KanbanBoard initialRows={rows} />
+        </section>
       )}
     </div>
   );

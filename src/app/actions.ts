@@ -3,6 +3,9 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { computeFitScore } from "@/lib/scoring";
+import { getCachedMedianSnapshot } from "@/lib/cache/school-medians";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
 import type {
   ProfilePrefs,
   ProfileStats,
@@ -49,13 +52,37 @@ const DEFAULT_WARS: WarsInputs = {
   leadershipFlag: true,
 };
 
+function parseFactNumber(raw: string): number | null {
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed === "number" && Number.isFinite(parsed)) return parsed;
+    if (typeof parsed === "string") {
+      const n = Number(parsed);
+      return Number.isFinite(n) ? n : null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 async function getPrimaryContext() {
+  const session = await getServerSession(authOptions);
+  const sessionUserId = session?.user?.id;
+  const existingProfile = sessionUserId
+    ? await prisma.applicantProfile.findFirst({
+        where: { userId: sessionUserId },
+        orderBy: { createdAt: "asc" },
+      })
+    : await prisma.applicantProfile.findFirst({
+        where: {},
+        orderBy: { createdAt: "asc" },
+      });
   const profile =
-    (await prisma.applicantProfile.findFirst({
-      orderBy: { createdAt: "asc" },
-    })) ??
+    existingProfile ??
     (await prisma.applicantProfile.create({
       data: {
+        userId: sessionUserId,
         displayName: "Applicant",
         statsJson: JSON.stringify(DEFAULT_STATS),
         prefsJson: JSON.stringify(DEFAULT_PREFS),
@@ -165,9 +192,24 @@ export async function getExplorerSchoolsAction(input?: {
   control?: string;
   state?: string;
   onlySaved?: boolean;
+  quickFilter?: "high_oos" | "t20_research" | "family_friendly";
+  mcatMin?: number;
+  mcatMax?: number;
+  tuitionMax?: number;
+  requireThreeYearPathway?: boolean;
+  excludeYieldProtection?: boolean;
+  minSafetyGrade?: "A" | "B" | "C" | "D" | "F";
 }) {
   const { list } = await getPrimaryContext();
   const q = input?.q?.trim() ?? "";
+  const gradeOrder = ["F", "D", "C", "B", "A"] as const;
+  const minGradeIndex = input?.minSafetyGrade
+    ? gradeOrder.indexOf(input.minSafetyGrade)
+    : -1;
+  const allowedGrades =
+    minGradeIndex >= 0
+      ? gradeOrder.slice(minGradeIndex).reverse()
+      : [];
   const savedIds = input?.onlySaved
     ? (
         await prisma.schoolListEntry.findMany({
@@ -191,13 +233,141 @@ export async function getExplorerSchoolsAction(input?: {
         input?.control ? { control: input.control } : {},
         input?.state ? { state: input.state } : {},
         input?.onlySaved ? { id: { in: savedIds } } : {},
+        input?.quickFilter === "high_oos"
+          ? {
+              OR: [
+                { residencyBiasNotes: { contains: "oos", mode: "insensitive" } },
+                { residencyBiasNotes: { contains: "out-of-state", mode: "insensitive" } },
+              ],
+            }
+          : {},
+        input?.quickFilter === "t20_research"
+          ? {
+              OR: [
+                { financialProfile: { is: { medianMcat: { gte: 519 } } } },
+                { missionTagNotes: { contains: "research", mode: "insensitive" } },
+              ],
+            }
+          : {},
+        input?.quickFilter === "family_friendly"
+          ? {
+              OR: [
+                { studentAffairsUrl: { not: null } },
+                { neighborhoodSafeties: { some: { safetyGrade: { in: ["A", "B"] } } } },
+                { neighborhoodSafeties: { some: { compositeSafetyScore: { gte: 70 } } } },
+              ],
+            }
+          : {},
+        input?.mcatMin != null
+          ? { financialProfile: { is: { medianMcat: { gte: input.mcatMin } } } }
+          : {},
+        input?.mcatMax != null
+          ? { financialProfile: { is: { medianMcat: { lte: input.mcatMax } } } }
+          : {},
+        input?.tuitionMax != null
+          ? {
+              financialProfile: {
+                is: {
+                  OR: [
+                    { tuitionResident: { lte: input.tuitionMax } },
+                    { tuitionNonResident: { lte: input.tuitionMax } },
+                  ],
+                },
+              },
+            }
+          : {},
+        input?.requireThreeYearPathway
+          ? { strategyProfile: { is: { hasThreeYearMdPathway: true } } }
+          : {},
+        input?.excludeYieldProtection
+          ? {
+              OR: [
+                { strategyProfile: { is: null } },
+                { strategyProfile: { is: { hasYieldProtectionFlag: false } } },
+                { strategyProfile: { is: { hasYieldProtectionFlag: null } } },
+              ],
+            }
+          : {},
+        allowedGrades.length > 0
+          ? {
+              neighborhoodSafeties: {
+                some: {
+                  safetyGrade: {
+                    in: allowedGrades,
+                  },
+                },
+              },
+            }
+          : {},
       ],
     },
-    include: { facts: true },
+    include: {
+      facts: {
+        where: {
+          key: {
+            in: [
+              "median_mcat",
+              "median_cgpa",
+              "tuition_resident",
+              "tuition_nonresident",
+              "aamc_2025_2026_total_resident",
+              "aamc_2025_2026_total_nonresident",
+              "avg_institutional_aid_amount",
+              "pct_receiving_aid",
+              "oos_acceptance_rate",
+              "public_oos_acceptance_rate",
+              "hud_2br_fmr_monthly",
+            ],
+          },
+        },
+      },
+      financialProfile: true,
+      costOfLivingProfile: true,
+      strategyProfile: true,
+      neighborhoodSafeties: {
+        take: 5,
+        orderBy: { updatedAt: "desc" },
+      },
+      clinicalAffiliations: {
+        take: 6,
+        orderBy: { updatedAt: "desc" },
+      },
+    },
     orderBy: [{ state: "asc" }, { name: "asc" }],
     take: 220,
   });
-  return schools;
+  const hydrated = await Promise.all(
+    schools.map(async (school) => {
+      const medianSnapshot = await getCachedMedianSnapshot(school.id, () => {
+        const medianMcatFact = school.facts.find((fact) => fact.key === "median_mcat");
+        const medianCgpaFact = school.facts.find((fact) => fact.key === "median_cgpa");
+        const tuitionResidentFact = school.facts.find((fact) => fact.key === "tuition_resident");
+        const tuitionNonResidentFact = school.facts.find((fact) => fact.key === "tuition_nonresident");
+        return {
+          medianMcat: school.financialProfile?.medianMcat ?? parseFactNumber(medianMcatFact?.valueJson ?? ""),
+          medianCgpa: school.financialProfile?.medianCgpa ?? parseFactNumber(medianCgpaFact?.valueJson ?? ""),
+          tuitionResident:
+            school.financialProfile?.tuitionResident ?? parseFactNumber(tuitionResidentFact?.valueJson ?? ""),
+          tuitionNonResident:
+            school.financialProfile?.tuitionNonResident ?? parseFactNumber(tuitionNonResidentFact?.valueJson ?? ""),
+        };
+      });
+
+      return {
+        ...school,
+        financialProfile: school.financialProfile
+          ? {
+              ...school.financialProfile,
+              medianMcat: school.financialProfile.medianMcat ?? medianSnapshot.medianMcat,
+              medianCgpa: school.financialProfile.medianCgpa ?? medianSnapshot.medianCgpa,
+              tuitionResident: school.financialProfile.tuitionResident ?? medianSnapshot.tuitionResident,
+              tuitionNonResident: school.financialProfile.tuitionNonResident ?? medianSnapshot.tuitionNonResident,
+            }
+          : null,
+      };
+    }),
+  );
+  return hydrated;
 }
 
 export async function searchSchoolsAction(query: string, control?: string) {
@@ -212,6 +382,13 @@ export async function getSchoolDetailAction(slug: string) {
       facts: { orderBy: [{ category: "asc" }, { label: "asc" }] },
       resources: { orderBy: [{ category: "asc" }, { sortOrder: "asc" }] },
       listEntries: { where: { listId: list.id } },
+      financialProfile: true,
+      costOfLivingProfile: true,
+      strategyProfile: true,
+      neighborhoodSafeties: { orderBy: [{ updatedAt: "desc" }] },
+      neighborhoodSafety: { orderBy: [{ updatedAt: "desc" }] },
+      clinicalAffiliations: { orderBy: [{ updatedAt: "desc" }, { hospitalName: "asc" }] },
+      secondaryPrompts: { orderBy: [{ year: "desc" }, { createdAt: "desc" }] },
     },
   });
   return school;
@@ -300,6 +477,17 @@ export async function updateListEntryAction(input: {
   revalidatePath("/");
   revalidatePath("/compare");
   revalidatePath("/schools");
+}
+
+export async function updateTrackerApplyStatusAction(input: {
+  schoolId: string;
+  applyStatus: "CONSIDERING" | "APPLY" | "SECONDARY" | "INTERVIEW";
+}) {
+  await updateListEntryAction({
+    schoolId: input.schoolId,
+    applyStatus: input.applyStatus,
+  });
+  revalidatePath("/tracker");
 }
 
 export async function upsertSchoolFactFormAction(formData: FormData) {
@@ -571,6 +759,7 @@ export async function exportBundleAction() {
       profile: bundle.profile,
       listId: bundle.listId,
       schools: entries.entries.map((e) => ({
+        id: e.id,
         slug: e.school.slug,
         name: e.school.name,
         city: e.school.city,
@@ -580,6 +769,22 @@ export async function exportBundleAction() {
         applyStatus: e.applyStatus,
         compositeScore: e.compositeScore,
         scoreBreakdown: e.scoreBreakdownJson,
+        holisticFitScore: (() => {
+          try {
+            const parsed = JSON.parse(e.scoreBreakdownJson ?? "{}") as { holisticFitScore?: number };
+            return parsed.holisticFitScore ?? null;
+          } catch {
+            return null;
+          }
+        })(),
+        aiVerdict: (() => {
+          try {
+            const parsed = JSON.parse(e.scoreBreakdownJson ?? "{}") as { aiVerdict?: string };
+            return parsed.aiVerdict ?? null;
+          } catch {
+            return null;
+          }
+        })(),
         notes: e.notes,
         checklistJson: e.checklistJson,
       })),

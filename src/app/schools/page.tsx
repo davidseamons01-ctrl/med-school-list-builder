@@ -1,21 +1,39 @@
-import Link from "next/link";
-import { getExplorerSchoolsAction, addSchoolToListAction, getProfileBundle } from "../actions";
-import { SchoolMap } from "@/components/SchoolMap";
-import { formatCurrency, formatPercent } from "@/lib/format";
+import { getExplorerSchoolsAction, getProfileBundle } from "../actions";
+import { DirectoryTableMapClient } from "@/components/schools/DirectoryTableMapClient";
 import { computeFitScore } from "@/lib/scoring";
+
+function parseFactNumber(valueJson: string | undefined): number | null {
+  if (!valueJson) return null;
+  try {
+    const parsed = JSON.parse(valueJson);
+    if (typeof parsed === "number" && Number.isFinite(parsed)) return parsed;
+    if (typeof parsed === "string") {
+      const num = Number(parsed);
+      return Number.isFinite(num) ? num : null;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
 
 export default async function SchoolsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; control?: string; state?: string; saved?: string }>;
+  searchParams: Promise<{ q?: string; control?: string; state?: string; saved?: string; chip?: string }>;
 }) {
   const params = await searchParams;
+  const quickFilter =
+    params.chip === "high_oos" || params.chip === "t20_research" || params.chip === "family_friendly"
+      ? params.chip
+      : undefined;
   const bundle = await getProfileBundle();
   const schools = await getExplorerSchoolsAction({
     q: params.q,
     control: params.control,
     state: params.state,
     onlySaved: params.saved === "1",
+    quickFilter,
   });
 
   const summaries = schools
@@ -33,18 +51,72 @@ export default async function SchoolsPage({
         name: school.name,
         city: school.city,
         state: school.state,
+        zip: school.zip ?? null,
         control: school.control,
         lat: school.lat,
         lng: school.lng,
-        score: fit.composite,
+        fitScore: fit.breakdown.holisticFitScore,
         breakdown: fit.breakdown,
         tier: fit.statTier,
         annualCost: fit.annualCost,
-        coverage: fit.breakdown.sourceCoverage,
-        school,
+        tuition:
+          school.financialProfile?.tuitionResident ??
+          school.financialProfile?.tuitionNonResident ??
+          null,
+        localRentMonthly:
+          school.costOfLivingProfile?.hudTwoBedroomFairMarketRent ??
+          school.costOfLivingProfile?.mitFamilyThreeMonthlyLivingWage ??
+          parseFactNumber(school.facts.find((f) => f.key === "hud_2br_fmr_monthly")?.valueJson) ??
+          bundle.profile.prefs.monthlyAreaRealityBudget ??
+          null,
+        trueCol:
+          (school.financialProfile?.tuitionResident ??
+            school.financialProfile?.tuitionNonResident ??
+            parseFactNumber(school.facts.find((f) => f.key === "aamc_2025_2026_total_resident")?.valueJson) ??
+            parseFactNumber(school.facts.find((f) => f.key === "aamc_2025_2026_total_nonresident")?.valueJson) ??
+            null) != null ||
+          (school.costOfLivingProfile?.hudTwoBedroomFairMarketRent ??
+            school.costOfLivingProfile?.mitFamilyThreeMonthlyLivingWage ??
+            parseFactNumber(school.facts.find((f) => f.key === "hud_2br_fmr_monthly")?.valueJson) ??
+            bundle.profile.prefs.monthlyAreaRealityBudget ??
+            null) != null
+            ? (school.financialProfile?.tuitionResident ??
+                school.financialProfile?.tuitionNonResident ??
+                parseFactNumber(school.facts.find((f) => f.key === "aamc_2025_2026_total_resident")?.valueJson) ??
+                parseFactNumber(school.facts.find((f) => f.key === "aamc_2025_2026_total_nonresident")?.valueJson) ??
+                0) +
+              (school.costOfLivingProfile?.hudTwoBedroomFairMarketRent ??
+                school.costOfLivingProfile?.mitFamilyThreeMonthlyLivingWage ??
+                parseFactNumber(school.facts.find((f) => f.key === "hud_2br_fmr_monthly")?.valueJson) ??
+                bundle.profile.prefs.monthlyAreaRealityBudget ??
+                0) *
+                12
+            : null,
+        trueMonthlyCol: fit.breakdown.trueCoa != null ? fit.breakdown.trueCoa / 12 : null,
+        medianMcatRaw:
+          school.financialProfile?.medianMcat ??
+          parseFactNumber(school.facts.find((f) => f.key === "median_mcat")?.valueJson),
+        medianMcat:
+          school.financialProfile?.medianMcat ??
+          parseFactNumber(school.facts.find((f) => f.key === "median_mcat")?.valueJson),
+        medianGpa: school.financialProfile?.medianCgpa ?? parseFactNumber(school.facts.find((f) => f.key === "median_cgpa")?.valueJson),
+        isT20Research:
+          (school.financialProfile?.medianMcat ?? 0) >= 519 ||
+          (school.missionTagNotes ?? "").toLowerCase().includes("research"),
+        isFamilyFriendly:
+          fit.breakdown.familySafetyNet >= 7 ||
+          Boolean(school.studentAffairsUrl),
+        hasThreeYearTrackRaw:
+          school.strategyProfile?.hasThreeYearMdPathway ??
+          school.has3YearPathway ??
+          null,
+        hasThreeYearTrack:
+          school.strategyProfile?.hasThreeYearMdPathway ??
+          school.has3YearPathway ??
+          false,
       };
     })
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => b.fitScore - a.fitScore);
 
   const uniqueStates = [...new Set(schools.map((school) => school.state))].sort();
 
@@ -105,87 +177,7 @@ export default async function SchoolsPage({
         </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <SchoolMap schools={summaries} />
-
-        <section className="surface scroll-area max-h-[640px] overflow-y-auto rounded-[2rem] p-4">
-          <div className="mb-4 flex items-center justify-between gap-4 px-2">
-            <div>
-              <h2 className="text-lg font-semibold text-white">Best-fit schools in current filter</h2>
-              <p className="mt-1 text-sm text-slate-400">{summaries.length} schools shown</p>
-            </div>
-          </div>
-          <div className="space-y-3">
-            {summaries.map((school) => (
-              <article
-                key={school.id}
-                className="rounded-[1.6rem] border border-white/8 bg-white/4 p-4 transition hover:border-cyan-400/25 hover:bg-white/6"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <Link href={`/schools/${school.slug}`} className="text-base font-semibold text-white hover:text-cyan-200">
-                      {school.name}
-                    </Link>
-                    <p className="mt-1 text-sm text-slate-400">
-                      {school.city}, {school.state} · {school.control.toLowerCase()}
-                    </p>
-                  </div>
-                  <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-medium text-cyan-200">
-                    {school.tier}
-                  </span>
-                </div>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-white/8 bg-slate-950/50 p-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Fit score</p>
-                    <p className="mt-2 text-xl font-semibold text-white">{formatPercent(school.score)}</p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      Coverage {formatPercent(school.coverage)} · Flags {school.breakdown.flags.length}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-white/8 bg-slate-950/50 p-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500">AAMC annual cost</p>
-                    <p className="mt-2 text-xl font-semibold text-white">{formatCurrency(school.annualCost)}</p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      Residency-aware using {bundle.profile.stats.residencyState || "your state"}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {school.breakdown.flags.slice(0, 3).map((flag) => (
-                    <span
-                      key={flag}
-                      className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2.5 py-1 text-[11px] text-amber-200"
-                    >
-                      {flag.replaceAll("_", " ")}
-                    </span>
-                  ))}
-                </div>
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                  <Link
-                    href={`/schools/${school.slug}`}
-                    className="text-sm font-medium text-cyan-300 hover:text-cyan-200"
-                  >
-                    Open research desk
-                  </Link>
-                  <form
-                    action={async () => {
-                      "use server";
-                      await addSchoolToListAction(school.slug);
-                    }}
-                  >
-                    <button
-                      type="submit"
-                      className="rounded-full border border-white/10 px-3 py-2 text-xs font-medium text-slate-200 hover:border-white/20 hover:bg-white/5"
-                    >
-                      Add / refresh list
-                    </button>
-                  </form>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      </div>
+      <DirectoryTableMapClient rows={summaries} initialChip={quickFilter ?? "all"} />
     </div>
   );
 }

@@ -42,6 +42,12 @@ export type ScoreBreakdown = {
   colFamily: number;
   geography: number;
   research: number;
+  trueCoa: number | null;
+  familySafetyNet: number;
+  academicPowerhouse: number;
+  statFit: number;
+  holisticFitScore: number;
+  aiVerdict: string;
   sourceCoverage: number;
   flags: string[];
 };
@@ -80,6 +86,31 @@ export type ExplorerSchool = {
   studentAffairsUrl: string | null;
   financialAidUrl: string | null;
   secondaryPromptsUrl: string | null;
+  financialProfile?: {
+    medianMcat: number | null;
+    medianCgpa: number | null;
+    tuitionResident: number | null;
+    tuitionNonResident: number | null;
+    averageGraduateDebt: number | null;
+    pctReceivingInstitutionalGrants: number | null;
+  } | null;
+  costOfLivingProfile?: {
+    hudTwoBedroomFairMarketRent: number | null;
+  } | null;
+  strategyProfile?: {
+    hasThreeYearMdPathway: boolean | null;
+    hasYieldProtectionFlag: boolean | null;
+  } | null;
+  neighborhoodSafeties?: Array<{
+    safetyGrade: string | null;
+    areaVibesScore: number | null;
+    compositeSafetyScore: number | null;
+  }>;
+  clinicalAffiliations?: Array<{
+    isLevel1Trauma: boolean | null;
+    isSafetyNet: boolean | null;
+    isVA: boolean | null;
+  }>;
   facts: SchoolFactRow[];
 };
 

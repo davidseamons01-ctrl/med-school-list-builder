@@ -20,6 +20,7 @@ export function ExportClient() {
       schools: Array<Record<string, string | number | null>>;
     };
     const headers = [
+      "id",
       "name",
       "slug",
       "city",
@@ -27,6 +28,8 @@ export function ExportClient() {
       "tier",
       "applyStatus",
       "compositeScore",
+      "holisticFitScore",
+      "aiVerdict",
       "notes",
       "checklistJson",
     ];

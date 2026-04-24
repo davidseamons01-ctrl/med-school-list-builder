@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { CheckCircle } from "lucide-react";
 import { SchoolMap } from "@/components/SchoolMap";
 import { formatCurrency } from "@/lib/format";
 
@@ -31,15 +32,13 @@ type Row = {
   hasThreeYearTrack: boolean;
 };
 
-type SortKey = "name" | "fitScore" | "trueCol" | "medianMcat" | "hasThreeYearTrack";
+type SortKey = "name" | "fitScore" | "annualCost" | "medianMcat" | "hasThreeYearTrack";
 
 const CYCLE_OPTIONS = [
   { label: "Considering", value: "CONSIDERING" },
   { label: "Primary", value: "APPLY" },
   { label: "Secondary", value: "SECONDARY" },
 ] as const;
-const ROW_HEIGHT = 56;
-const VIEWPORT_HEIGHT = 620;
 
 function num(v: number | null) {
   return v ?? Number.NEGATIVE_INFINITY;
@@ -62,6 +61,10 @@ function fitTone(score: number) {
   return "text-rose-300";
 }
 
+const TH_CLASS =
+  "whitespace-nowrap px-4 py-3 text-left sticky top-0 z-10 bg-slate-900 border-b border-white/10 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400";
+const TD_CLASS = "whitespace-nowrap px-4 py-3 text-sm text-slate-200";
+
 export function DirectoryTableMapClient({
   rows,
   initialChip,
@@ -75,14 +78,11 @@ export function DirectoryTableMapClient({
   const [chip, setChip] = useState<"all" | "high_oos" | "t20_research" | "family_friendly">(initialChip);
   const [sortKey, setSortKey] = useState<SortKey>("fitScore");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [visibleCount, setVisibleCount] = useState(80);
-  const [scrollTop, setScrollTop] = useState(0);
+  const [visibleCount, setVisibleCount] = useState(60);
   const [loadingSlug, setLoadingSlug] = useState<string | null>(null);
-  const [scrollbarWidth, setScrollbarWidth] = useState(0);
   const [radiusZip, setRadiusZip] = useState("");
   const [radiusMiles, setRadiusMiles] = useState(500);
   const [radiusEnabled, setRadiusEnabled] = useState(false);
-  const bodyScrollRef = useRef<HTMLDivElement | null>(null);
 
   function setServerFilter(nextChip: "all" | "high_oos" | "t20_research" | "family_friendly") {
     setChip(nextChip);
@@ -108,32 +108,19 @@ export function DirectoryTableMapClient({
     });
   }, [rows, radiusEnabled, radiusZip, radiusMiles]);
 
-  const chipFiltered = useMemo(() => {
-    return radiusFiltered;
-  }, [radiusFiltered]);
-
   const sorted = useMemo(() => {
-    const sortedRows = [...chipFiltered].sort((a, b) => {
+    const sortedRows = [...radiusFiltered].sort((a, b) => {
       if (sortKey === "name") return a.name.localeCompare(b.name);
       if (sortKey === "fitScore") return a.fitScore - b.fitScore;
-      if (sortKey === "trueCol") return num(a.trueCol) - num(b.trueCol);
+      if (sortKey === "annualCost") return num(a.annualCost) - num(b.annualCost);
       if (sortKey === "medianMcat") return num(a.medianMcat) - num(b.medianMcat);
       return Number(Boolean(a.hasThreeYearTrack)) - Number(Boolean(b.hasThreeYearTrack));
     });
     if (sortDir === "desc") sortedRows.reverse();
     return sortedRows;
-  }, [chipFiltered, sortDir, sortKey]);
+  }, [radiusFiltered, sortDir, sortKey]);
 
-  const loadedRows = sorted.slice(0, visibleCount);
-  const totalHeight = loadedRows.length * ROW_HEIGHT;
-  const startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - 8);
-  const endIndex = Math.min(
-    loadedRows.length,
-    startIndex + Math.ceil(VIEWPORT_HEIGHT / ROW_HEIGHT) + 20,
-  );
-  const virtualRows = loadedRows.slice(startIndex, endIndex);
-  const topSpacer = startIndex * ROW_HEIGHT;
-  const bottomSpacer = Math.max(0, totalHeight - topSpacer - virtualRows.length * ROW_HEIGHT);
+  const visibleRows = sorted.slice(0, visibleCount);
 
   function onSort(nextKey: SortKey) {
     if (sortKey === nextKey) {
@@ -170,21 +157,8 @@ export function DirectoryTableMapClient({
     tier: r.tier,
   }));
 
-  useEffect(() => {
-    function computeScrollbarWidth() {
-      const el = bodyScrollRef.current;
-      if (!el) return;
-      const width = Math.max(0, el.offsetWidth - el.clientWidth);
-      setScrollbarWidth(width);
-    }
-
-    computeScrollbarWidth();
-    window.addEventListener("resize", computeScrollbarWidth);
-    return () => window.removeEventListener("resize", computeScrollbarWidth);
-  }, [sorted.length]);
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="surface rounded-[1.5rem] p-4 space-y-4">
         <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1">
           <button
@@ -246,52 +220,66 @@ export function DirectoryTableMapClient({
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-        <section className="surface overflow-hidden rounded-[1.8rem]">
-          <div className="overflow-x-auto">
-            <div
-              className="grid min-w-[860px] grid-cols-[2.5fr_1.2fr_1.6fr_1fr_1fr_1.5fr] border-b border-white/10 px-3 py-3 text-[11px] uppercase tracking-[0.18em] text-slate-400"
-              style={{ paddingRight: `${12 + scrollbarWidth}px` }}
-            >
-              <button type="button" onClick={() => onSort("name")} className="text-left">Name</button>
-              <button type="button" onClick={() => onSort("fitScore")} className="text-right">Holistic Fit Score</button>
-              <button type="button" onClick={() => onSort("trueCol")} className="text-right">True COL (Tuition + Rent)</button>
-              <button type="button" onClick={() => onSort("medianMcat")} className="text-right">Median MCAT</button>
-              <button type="button" onClick={() => onSort("hasThreeYearTrack")} className="text-center">3-Year MD</button>
-              <div className="text-right">My Cycle</div>
-            </div>
-            <div
-              ref={bodyScrollRef}
-              className="scroll-area overflow-y-auto"
-              style={{ height: VIEWPORT_HEIGHT }}
-              onScroll={(e) => {
-                const top = e.currentTarget.scrollTop;
-                setScrollTop(top);
-                const nearBottom =
-                  top + e.currentTarget.clientHeight >= e.currentTarget.scrollHeight - 180;
-                if (nearBottom) {
-                  setVisibleCount((c) => Math.min(c + 40, sorted.length));
-                }
-              }}
-            >
-              <div style={{ height: topSpacer }} />
-              {virtualRows.map((row) => (
-                <div
-                  key={row.id}
-                  className="grid h-14 min-w-[860px] grid-cols-[2.5fr_1.2fr_1.6fr_1fr_1fr_1.5fr] items-center border-b border-white/6 px-3 text-sm"
-                >
-                  <div className="truncate text-slate-100" title={row.name}>{row.name}</div>
-                  <div className={`text-right font-semibold ${fitTone(row.fitScore)}`}>{Math.round(row.fitScore)}</div>
-                  <div className="text-right text-slate-300">{formatCurrency(row.trueCol)}</div>
-                  <div className="text-right text-slate-300">
-                    {row.medianMcatRaw == null ? "No data" : row.medianMcat}
-                  </div>
-                  <div className="text-center text-slate-200">
-                    {row.hasThreeYearTrackRaw == null ? "No data" : row.hasThreeYearTrack ? "✔" : "—"}
-                  </div>
-                  <div className="flex justify-end">
+      <section className="w-full">
+        <div className="w-full overflow-x-auto rounded-xl border border-white/10 bg-slate-950/40">
+          <table className="w-full min-w-[960px] border-collapse text-sm">
+            <thead>
+              <tr>
+                <th className={TH_CLASS}>
+                  <button type="button" onClick={() => onSort("name")} className="text-left">
+                    Name
+                  </button>
+                </th>
+                <th className={`${TH_CLASS} text-right`}>
+                  <button type="button" onClick={() => onSort("fitScore")} className="ml-auto block">
+                    Holistic Fit
+                  </button>
+                </th>
+                <th className={`${TH_CLASS} text-right`}>
+                  <button type="button" onClick={() => onSort("annualCost")} className="ml-auto block">
+                    True Annual Cost
+                  </button>
+                </th>
+                <th className={`${TH_CLASS} text-right`}>
+                  <button type="button" onClick={() => onSort("medianMcat")} className="ml-auto block">
+                    Median MCAT
+                  </button>
+                </th>
+                <th className={`${TH_CLASS} text-center`}>
+                  <button type="button" onClick={() => onSort("hasThreeYearTrack")} className="mx-auto block">
+                    3-Year MD
+                  </button>
+                </th>
+                <th className={`${TH_CLASS} text-right`}>My Cycle</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleRows.map((row) => (
+                <tr key={row.id} className="border-b border-white/5 hover:bg-white/5">
+                  <td className={`${TD_CLASS} text-slate-100`} title={row.name}>
+                    {row.name}
+                  </td>
+                  <td className={`${TD_CLASS} text-right font-semibold ${fitTone(row.fitScore)}`}>
+                    {Math.round(row.fitScore)}
+                  </td>
+                  <td className={`${TD_CLASS} text-right text-slate-300`}>{formatCurrency(row.annualCost)}</td>
+                  <td className={`${TD_CLASS} text-right text-slate-300`}>
+                    {row.medianMcatRaw == null ? <span className="text-slate-500">No data</span> : row.medianMcat}
+                  </td>
+                  <td className={`${TD_CLASS} text-center`}>
+                    {row.hasThreeYearTrackRaw == null ? (
+                      <span className="text-slate-500">No data</span>
+                    ) : row.hasThreeYearTrack ? (
+                      <CheckCircle className="mx-auto h-5 w-5 text-emerald-400" aria-label="3-Year MD pathway" />
+                    ) : (
+                      <span className="text-slate-500">—</span>
+                    )}
+                  </td>
+                  <td className={`${TD_CLASS} text-right`}>
                     <select
-                      onChange={(e) => void quickCycle(row.slug, e.target.value as "CONSIDERING" | "APPLY" | "SECONDARY")}
+                      onChange={(e) =>
+                        void quickCycle(row.slug, e.target.value as "CONSIDERING" | "APPLY" | "SECONDARY")
+                      }
                       disabled={loadingSlug === row.slug}
                       defaultValue=""
                       className="rounded-lg border border-white/10 bg-slate-950/80 px-2 py-1 text-xs text-slate-200"
@@ -305,19 +293,37 @@ export function DirectoryTableMapClient({
                         </option>
                       ))}
                     </select>
-                  </div>
-                </div>
+                  </td>
+                </tr>
               ))}
-              <div style={{ height: bottomSpacer }} />
-            </div>
+              {visibleRows.length === 0 && (
+                <tr>
+                  <td className={`${TD_CLASS} py-8 text-center text-slate-400`} colSpan={6}>
+                    No schools match the current filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        {visibleCount < sorted.length && (
+          <div className="mt-3 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setVisibleCount((c) => Math.min(c + 40, sorted.length))}
+              className="rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2 text-xs text-slate-200 hover:border-white/20"
+            >
+              Show more ({sorted.length - visibleCount} remaining)
+            </button>
           </div>
-        </section>
+        )}
+      </section>
 
-        <aside className="sticky top-24 h-[760px]">
+      <section className="mt-8 w-full">
+        <div className="w-full overflow-hidden rounded-xl border border-white/10">
           <SchoolMap schools={mapRows} />
-        </aside>
-      </div>
+        </div>
+      </section>
     </div>
   );
 }
-

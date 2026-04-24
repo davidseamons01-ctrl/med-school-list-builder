@@ -9,6 +9,8 @@ import { RealCostCalculator } from "@/components/schools/RealCostCalculator";
 import { FamilyResourcesPanel } from "@/components/schools/FamilyResourcesPanel";
 import { SecondaryPromptsAccordion } from "@/components/schools/SecondaryPromptsAccordion";
 import { AiVerdictCardStream } from "@/components/schools/AiVerdictCardStream";
+import { ResearchHubPanel } from "@/components/schools/ResearchHubPanel";
+import { buildResearchSections } from "@/lib/research-hub";
 
 type PromptItem = { year: number; prompt: string };
 
@@ -214,6 +216,22 @@ export default async function SchoolDetailPage({
           streetViewEmbedUrl={hospitalStreetView}
         />
       </div>
+
+      <ResearchHubPanel
+        sections={buildResearchSections({
+          name: school.name,
+          city: school.city,
+          state: school.state,
+          zip: school.zip,
+          lat: school.lat,
+          lng: school.lng,
+          websiteUrl: school.websiteUrl,
+          admissionsUrl: school.admissionsUrl,
+          studentAffairsUrl: school.studentAffairsUrl,
+          financialAidUrl: school.financialAidUrl,
+          secondaryPromptsUrl: school.secondaryPromptsUrl,
+        })}
+      />
 
       <SecondaryPromptsAccordion prompts={prompts} />
 

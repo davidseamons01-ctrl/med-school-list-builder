@@ -3,6 +3,7 @@ import { ArrowRight, Database, DollarSign, MapPinned, ShieldCheck } from "lucide
 import { getDashboardDataAction } from "./actions";
 import { formatCurrency } from "@/lib/format";
 import { getResidencyAwareAnnualCost, lizzym, warsTierBand } from "@/lib/scoring";
+import { ApplicantAiProfileCard } from "@/components/ai/ApplicantAiProfileCard";
 
 export default async function DashboardPage() {
   const { bundle, listData, schoolsCount, factsCount, resourcesCount } =
@@ -108,6 +109,14 @@ export default async function DashboardPage() {
           </div>
         </div>
       </section>
+
+      <ApplicantAiProfileCard
+        fallbackMcat={bundle.profile.stats.mcat}
+        fallbackCgpa={bundle.profile.stats.cgpa}
+        fallbackResidencyState={bundle.profile.stats.residencyState}
+        fallbackMissionTags={bundle.profile.prefs.missionTags}
+        fallbackSpecialtyInterest={bundle.profile.stats.specialtyInterest}
+      />
 
       <section className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
         <div className="surface rounded-[2rem] p-6">

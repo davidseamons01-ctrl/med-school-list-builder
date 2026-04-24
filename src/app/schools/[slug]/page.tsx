@@ -65,6 +65,17 @@ export default async function SchoolDetailPage({
     weights: profile.weights,
     wars: profile.wars,
     school,
+    aiProfile: profile.ai
+      ? {
+          academicStrength: profile.ai.academicStrength,
+          clinicalDepth: profile.ai.clinicalDepth,
+          researchReadiness: profile.ai.researchReadiness,
+          serviceOrientation: profile.ai.serviceOrientation,
+          leadershipImpact: profile.ai.leadershipImpact,
+          narrativeCoherence: profile.ai.narrativeCoherence,
+          missionThemes: profile.ai.missionThemes,
+        }
+      : null,
   });
 
   const alignmentScore = fit.breakdown.holisticFitScore;

@@ -93,7 +93,35 @@ model ApplicantProfile {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  lists SchoolList[]
+  lists     SchoolList[]
+  aiProfile ApplicantAiProfile?
+}
+
+model ApplicantAiProfile {
+  id                 String   @id @default(cuid())
+  profileId          String   @unique
+  profile            ApplicantProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  academicStrength    Int
+  clinicalDepth       Int
+  researchReadiness   Int
+  serviceOrientation  Int
+  leadershipImpact    Int
+  narrativeCoherence  Int
+
+  missionThemesJson   String
+  archetypesJson      String
+  strengthsJson       String
+  gapsJson            String
+  narrativeSummary    String
+  redFlagsJson        String
+
+  model               String   @default("claude-sonnet-4-5")
+  promptVersion       String   @default("v1")
+  sourceFingerprint   String
+  rawResponseJson     String?
+  generatedAt         DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
 
 model SchoolList {

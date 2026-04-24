@@ -44,6 +44,17 @@ export default async function SchoolsPage({
         weights: bundle.profile.weights,
         wars: bundle.profile.wars,
         school,
+        aiProfile: bundle.profile.ai
+          ? {
+              academicStrength: bundle.profile.ai.academicStrength,
+              clinicalDepth: bundle.profile.ai.clinicalDepth,
+              researchReadiness: bundle.profile.ai.researchReadiness,
+              serviceOrientation: bundle.profile.ai.serviceOrientation,
+              leadershipImpact: bundle.profile.ai.leadershipImpact,
+              narrativeCoherence: bundle.profile.ai.narrativeCoherence,
+              missionThemes: bundle.profile.ai.missionThemes,
+            }
+          : null,
       });
       return {
         slug: school.slug,

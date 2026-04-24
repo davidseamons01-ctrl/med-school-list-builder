@@ -111,6 +111,9 @@ function parseJson<T>(raw: string, fallback: T): T {
 
 export async function getProfileBundle() {
   const { profile, list } = await getPrimaryContext();
+  const aiProfile = await prisma.applicantAiProfile.findUnique({
+    where: { profileId: profile.id },
+  });
   return {
     profile: {
       id: profile.id,
@@ -119,6 +122,26 @@ export async function getProfileBundle() {
       prefs: parseJson<ProfilePrefs>(profile.prefsJson, DEFAULT_PREFS),
       weights: parseJson<ProfileWeights>(profile.weightsJson, DEFAULT_WEIGHTS),
       wars: parseJson<WarsInputs>(profile.warsJson, DEFAULT_WARS),
+      ai: aiProfile
+        ? {
+            academicStrength: aiProfile.academicStrength,
+            clinicalDepth: aiProfile.clinicalDepth,
+            researchReadiness: aiProfile.researchReadiness,
+            serviceOrientation: aiProfile.serviceOrientation,
+            leadershipImpact: aiProfile.leadershipImpact,
+            narrativeCoherence: aiProfile.narrativeCoherence,
+            missionThemes: parseJson<Array<{ theme: string; weight: number }>>(
+              aiProfile.missionThemesJson,
+              [],
+            ),
+            archetypes: parseJson<string[]>(aiProfile.archetypesJson, []),
+            strengths: parseJson<string[]>(aiProfile.strengthsJson, []),
+            gaps: parseJson<string[]>(aiProfile.gapsJson, []),
+            redFlags: parseJson<string[]>(aiProfile.redFlagsJson, []),
+            narrativeSummary: aiProfile.narrativeSummary,
+            generatedAt: aiProfile.generatedAt.toISOString(),
+          }
+        : null,
     },
     listId: list.id,
   };

@@ -8,6 +8,27 @@ import type {
   WarsInputs,
 } from "./types";
 import { TIER_BASELINE, TIER_REACH, TIER_TARGET } from "./types";
+import {
+  MISSION_THEMES,
+  extractSchoolMissionThemes,
+  missionFitFromThemes,
+  type MissionTheme,
+} from "./ai/mission-themes";
+
+export type ApplicantAiProfileForScoring = {
+  academicStrength: number;
+  clinicalDepth: number;
+  researchReadiness: number;
+  serviceOrientation: number;
+  leadershipImpact: number;
+  narrativeCoherence: number;
+  missionThemes: Array<{ theme: string; weight: number }>;
+};
+
+function coerceMissionTheme(raw: string): MissionTheme | null {
+  const canonical = MISSION_THEMES as readonly string[];
+  return canonical.includes(raw) ? (raw as MissionTheme) : null;
+}
 
 type ScoreSchoolInput = Pick<
   ExplorerSchool,
@@ -224,6 +245,7 @@ export function computeFitScore(input: {
   weights: ProfileWeights;
   wars: WarsInputs;
   school: ScoreSchoolInput;
+  aiProfile?: ApplicantAiProfileForScoring | null;
 }): { composite: number; breakdown: ScoreBreakdown; statTier: string; annualCost: number | null } {
   const weights = normalizeWeights(input.weights);
   const flags: string[] = [];
@@ -318,7 +340,24 @@ export function computeFitScore(input: {
     flags.push("yield_protection_risk");
   }
 
-  const mission = missionOverlapScore(input.school.missionTagNotes, input.prefs.missionTags);
+  // Mission fit: prefer AI-extracted applicant themes (canonical vocabulary)
+  // matched against the school's extracted themes. Falls back to the legacy
+  // mission-tag keyword match when no AI profile is available.
+  let mission: number;
+  if (input.aiProfile && input.aiProfile.missionThemes.length > 0) {
+    const schoolThemes = extractSchoolMissionThemes(input.school.missionTagNotes);
+    const applicantWeights: Partial<Record<MissionTheme, number>> = {};
+    for (const { theme, weight } of input.aiProfile.missionThemes) {
+      const canonical = coerceMissionTheme(theme);
+      if (canonical) {
+        applicantWeights[canonical] = Math.max(applicantWeights[canonical] ?? 0, weight);
+      }
+    }
+    mission = missionFitFromThemes(applicantWeights, schoolThemes);
+  } else {
+    mission = missionOverlapScore(input.school.missionTagNotes, input.prefs.missionTags);
+  }
+
   const cost = costFamilyScore({
     annualCost,
     monthlyBudget: input.prefs.monthlyAreaRealityBudget,
@@ -326,7 +365,20 @@ export function computeFitScore(input: {
     coaSensitivity: input.prefs.coaSensitivity,
   });
   const geography = geographyScore(input.school.state, input.prefs);
-  const research = researchScore(input.school.control, input.prefs);
+
+  // Research fit: if we have an AI-derived researchReadiness signal, use it
+  // directly — this captures posters/pubs/independent projects far better
+  // than the prefs slider alone. Boost at research-intensive privates.
+  let research: number;
+  if (input.aiProfile) {
+    const base = input.aiProfile.researchReadiness / 100;
+    const institutionalBoost = input.school.control === "PRIVATE" ? 0.08 : 0;
+    const schoolThemes = extractSchoolMissionThemes(input.school.missionTagNotes);
+    const researchSchoolBoost = schoolThemes.research || schoolThemes.academic_medicine ? 0.05 : 0;
+    research = clamp01(base + institutionalBoost + researchSchoolBoost);
+  } else {
+    research = researchScore(input.school.control, input.prefs);
+  }
   const spouseAssociations =
     Boolean(input.school.familyFriendly) || Boolean(input.school.studentAffairsUrl);
   const latestSafety = input.school.neighborhoodSafeties?.[0];
@@ -369,15 +421,38 @@ export function computeFitScore(input: {
     else if (input.school.familyFriendly === false) familyAdjustment = -0.05;
   }
 
-  // Holistic score is anchored on the weighted composite but takes two
-  // additive signals: the normalized family safety net (0-1) and academic
-  // powerhouse index (0-1), plus the family-fit adjustment. We then apply
-  // a mild power-curve stretch so great fits push toward 90+ and weak fits
-  // drop into the 20s/30s instead of clustering in the 50-70 band.
+  // If an AI profile is present, blend the applicant's service orientation
+  // and clinical depth against the school's mission / affiliation signals.
+  // This is the "AI-informed" multiplier — computed once per render per
+  // school using already-cached AI scores, with zero additional LLM calls.
+  let aiAlignment01 = 0.5;
+  if (input.aiProfile) {
+    const schoolThemes = extractSchoolMissionThemes(input.school.missionTagNotes);
+    const serviceBoostThemes =
+      schoolThemes.service ||
+      schoolThemes.community_engagement ||
+      schoolThemes.health_equity ||
+      schoolThemes.urban_underserved ||
+      schoolThemes.rural;
+    const serviceMatch = serviceBoostThemes
+      ? input.aiProfile.serviceOrientation / 100
+      : 0.5;
+    const clinicalMatch = input.aiProfile.clinicalDepth / 100;
+    const narrativeBonus = input.aiProfile.narrativeCoherence / 100;
+    aiAlignment01 = clamp01(
+      serviceMatch * 0.4 + clinicalMatch * 0.35 + narrativeBonus * 0.25,
+    );
+  }
+
+  // Holistic score weights: 55% deterministic composite, 18% family safety
+  // net, 14% academic powerhouse, 13% AI-informed alignment (when present),
+  // plus the family adjustment. Power-curve stretch keeps the distribution
+  // from clustering in 50-70.
   const blended = clamp01(
-    composite * 0.6 +
-      (familySafetyNet / 10) * 0.2 +
-      academicPowerhouse * 0.2 +
+    composite * (input.aiProfile ? 0.55 : 0.6) +
+      (familySafetyNet / 10) * (input.aiProfile ? 0.18 : 0.2) +
+      academicPowerhouse * (input.aiProfile ? 0.14 : 0.2) +
+      (input.aiProfile ? aiAlignment01 * 0.13 : 0) +
       familyAdjustment,
   );
   const spread = Math.pow(blended, 1.25) * 1.15 - 0.05;

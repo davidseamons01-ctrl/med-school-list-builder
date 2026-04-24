@@ -12,6 +12,7 @@ export default async function TrackerPage() {
     schoolCity: entry.school.city,
     schoolState: entry.school.state,
     applyStatus: entry.applyStatus,
+    secondaryFee: entry.school.secondaryFee ?? null,
   }));
 
   return (

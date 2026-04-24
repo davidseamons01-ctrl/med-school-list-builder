@@ -17,7 +17,12 @@ type TrackerRow = {
   schoolCity: string;
   schoolState: string;
   applyStatus: string;
+  secondaryFee: number | null;
 };
+
+const AMCAS_FIRST_SCHOOL_FEE_2025 = 175;
+const AMCAS_ADDITIONAL_FEE_2025 = 46;
+const FALLBACK_SECONDARY_FEE = 110;
 
 const COLUMNS: Array<{ id: ApplyStatus; title: string }> = [
   { id: "CONSIDERING", title: "Considering" },
@@ -104,16 +109,32 @@ export function CycleTrackerBoard({ initialRows }: { initialRows: TrackerRow[] }
   );
 
   const financial = useMemo(() => {
-    const primaryCount = rows.filter((row) => normalizeStatus(row.applyStatus) === "APPLY").length;
-    const secondaryCount = rows.filter((row) => normalizeStatus(row.applyStatus) === "SECONDARY").length;
-    const primaryCost = primaryCount > 0 ? 43 + (primaryCount - 1) * 43 : 0;
-    const secondaryCost = secondaryCount * 100;
+    const submittedPrimaryRows = rows.filter((row) => {
+      const status = normalizeStatus(row.applyStatus);
+      return status === "APPLY" || status === "SECONDARY" || status === "INTERVIEW";
+    });
+    const secondaryRows = rows.filter((row) => {
+      const status = normalizeStatus(row.applyStatus);
+      return status === "SECONDARY" || status === "INTERVIEW";
+    });
+    const primaryCount = submittedPrimaryRows.length;
+    const secondaryCount = secondaryRows.length;
+    const primaryCost =
+      primaryCount > 0
+        ? AMCAS_FIRST_SCHOOL_FEE_2025 + (primaryCount - 1) * AMCAS_ADDITIONAL_FEE_2025
+        : 0;
+    const secondaryCost = secondaryRows.reduce(
+      (sum, row) => sum + (row.secondaryFee ?? FALLBACK_SECONDARY_FEE),
+      0,
+    );
+    const missingFeeCount = secondaryRows.filter((row) => row.secondaryFee == null).length;
     return {
       primaryCount,
       secondaryCount,
       primaryCost,
       secondaryCost,
       total: primaryCost + secondaryCost,
+      missingFeeCount,
     };
   }, [rows]);
 
@@ -137,7 +158,7 @@ export function CycleTrackerBoard({ initialRows }: { initialRows: TrackerRow[] }
     <div className="space-y-4">
       <section className="surface rounded-[1.6rem] p-5">
         <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-300">Financial Cycle Planner</h3>
-        <div className="mt-3 grid gap-3 md:grid-cols-4">
+        <div className="mt-3 grid gap-3 md:grid-cols-5">
           <div className="rounded-xl border border-white/10 bg-slate-950/50 p-3">
             <p className="text-xs text-slate-400">Primary Count</p>
             <p className="mt-1 text-lg font-semibold text-white">{financial.primaryCount}</p>
@@ -147,12 +168,23 @@ export function CycleTrackerBoard({ initialRows }: { initialRows: TrackerRow[] }
             <p className="mt-1 text-lg font-semibold text-white">{financial.secondaryCount}</p>
           </div>
           <div className="rounded-xl border border-white/10 bg-slate-950/50 p-3">
-            <p className="text-xs text-slate-400">Estimated Total</p>
-            <p className="mt-1 text-lg font-semibold text-white">{formatCurrency(financial.total)}</p>
+            <p className="text-xs text-slate-400">AMCAS Primary Cost</p>
+            <p className="mt-1 text-lg font-semibold text-white">{formatCurrency(financial.primaryCost)}</p>
+            <p className="mt-0.5 text-[10px] text-slate-500">$175 first + $46 each add&apos;l (2025)</p>
           </div>
           <div className="rounded-xl border border-white/10 bg-slate-950/50 p-3">
-            <p className="text-xs text-slate-400">Formula</p>
-            <p className="mt-1 text-xs text-slate-300">$43 first primary + $43 each additional + $100/secondary</p>
+            <p className="text-xs text-slate-400">Secondary Fees</p>
+            <p className="mt-1 text-lg font-semibold text-white">{formatCurrency(financial.secondaryCost)}</p>
+            <p className="mt-0.5 text-[10px] text-slate-500">
+              Per-school fee (e.g., NYU $0, Emory $150)
+              {financial.missingFeeCount > 0
+                ? ` · ${financial.missingFeeCount} at $${FALLBACK_SECONDARY_FEE} default`
+                : ""}
+            </p>
+          </div>
+          <div className="rounded-xl border border-cyan-400/30 bg-cyan-400/10 p-3">
+            <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">Estimated Total</p>
+            <p className="mt-1 text-xl font-semibold text-white">{formatCurrency(financial.total)}</p>
           </div>
         </div>
         {pending ? <p className="mt-2 text-xs text-slate-400">Saving drag update...</p> : null}

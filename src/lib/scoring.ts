@@ -14,6 +14,9 @@ type ScoreSchoolInput = Pick<
   "state" | "control" | "missionTagNotes" | "facts"
 > & {
   studentAffairsUrl?: string | null;
+  oosFriendly?: boolean | null;
+  oosMatriculantPct?: number | null;
+  familyFriendly?: boolean | null;
   financialProfile?: ExplorerSchool["financialProfile"];
   costOfLivingProfile?: ExplorerSchool["costOfLivingProfile"];
   strategyProfile?: ExplorerSchool["strategyProfile"];
@@ -264,27 +267,47 @@ export function computeFitScore(input: {
 
   let statsScore = 0.5;
   if (medianMcat != null && medianCgpa != null) {
-    const mcatScore = clamp01(0.5 + (input.stats.mcat - medianMcat) / 12);
-    const gpaScore = clamp01(0.5 + (input.stats.cgpa - medianCgpa) / 0.18);
-    statsScore = clamp01((mcatScore + gpaScore) / 2);
+    // Widened delta so a ±4 MCAT / ±0.08 GPA swing maps to ~0.67-0.33 rather
+    // than the old compressed 0.58-0.42. Makes obvious baselines and reaches
+    // visibly different on the 0-100 scale.
+    const mcatScore = clamp01(0.5 + (input.stats.mcat - medianMcat) / 6);
+    const gpaScore = clamp01(0.5 + (input.stats.cgpa - medianCgpa) / 0.1);
+    statsScore = clamp01((mcatScore * 0.55 + gpaScore * 0.45));
     if (input.stats.mcat - medianMcat > 8) flags.push("high_stat_vs_median");
   } else {
     flags.push("missing_official_mcat_gpa");
   }
 
-  const oosAcceptanceRate =
-    getFactNumber(input.school.facts, "oos_acceptance_rate") ??
-    getFactNumber(input.school.facts, "public_oos_acceptance_rate");
   const isOutOfState =
     input.stats.residencyState.trim().toUpperCase() !== input.school.state.trim().toUpperCase();
-  if (
-    input.school.control === "PUBLIC" &&
-    isOutOfState &&
-    oosAcceptanceRate != null &&
-    oosAcceptanceRate < 10
-  ) {
-    statsScore = clamp01(statsScore * 0.55);
-    flags.push("oos_public_stat_penalty");
+
+  // Curated OOS friendliness is the primary signal now; fall back to
+  // published OOS acceptance rates if still missing.
+  const oosFriendly = input.school.oosFriendly;
+  const oosMatriculantPct = input.school.oosMatriculantPct ?? null;
+  const publishedOosAcceptance =
+    getFactNumber(input.school.facts, "oos_acceptance_rate") ??
+    getFactNumber(input.school.facts, "public_oos_acceptance_rate");
+
+  if (isOutOfState) {
+    if (oosFriendly === false) {
+      statsScore = clamp01(statsScore * 0.35);
+      flags.push("oos_public_stat_penalty");
+    } else if (oosFriendly == null && input.school.control === "PUBLIC") {
+      statsScore = clamp01(statsScore * 0.6);
+      flags.push("oos_friendliness_unknown");
+    } else if (
+      input.school.control === "PUBLIC" &&
+      publishedOosAcceptance != null &&
+      publishedOosAcceptance < 10
+    ) {
+      statsScore = clamp01(statsScore * 0.55);
+      flags.push("oos_public_stat_penalty");
+    }
+    if (oosMatriculantPct != null && oosMatriculantPct >= 40) {
+      // Very OOS-welcoming schools get a small stat-tier boost.
+      statsScore = clamp01(statsScore * 1.05);
+    }
   }
 
   if (
@@ -304,7 +327,8 @@ export function computeFitScore(input: {
   });
   const geography = geographyScore(input.school.state, input.prefs);
   const research = researchScore(input.school.control, input.prefs);
-  const spouseAssociations = Boolean(input.school.studentAffairsUrl);
+  const spouseAssociations =
+    Boolean(input.school.familyFriendly) || Boolean(input.school.studentAffairsUrl);
   const latestSafety = input.school.neighborhoodSafeties?.[0];
   const familySafetyNet = calculateFamilySafetyNetScore({
     neighborhoodSafetyGrade: latestSafety?.safetyGrade ?? null,
@@ -335,9 +359,29 @@ export function computeFitScore(input: {
       weights.geography * geography +
       weights.research * research * (0.75 + 0.25 * sources),
   );
-  const holisticScore01 = clamp01(
-    composite * 0.65 + (familySafetyNet / 10) * 0.2 + academicPowerhouse * 0.15,
+
+  // Family-first applicants earn a bonus when the school is explicitly
+  // family-friendly, and a penalty when it isn't.
+  const hasDependents = input.prefs.householdChildren > 0;
+  let familyAdjustment = 0;
+  if (hasDependents) {
+    if (input.school.familyFriendly === true) familyAdjustment = 0.07;
+    else if (input.school.familyFriendly === false) familyAdjustment = -0.05;
+  }
+
+  // Holistic score is anchored on the weighted composite but takes two
+  // additive signals: the normalized family safety net (0-1) and academic
+  // powerhouse index (0-1), plus the family-fit adjustment. We then apply
+  // a mild power-curve stretch so great fits push toward 90+ and weak fits
+  // drop into the 20s/30s instead of clustering in the 50-70 band.
+  const blended = clamp01(
+    composite * 0.6 +
+      (familySafetyNet / 10) * 0.2 +
+      academicPowerhouse * 0.2 +
+      familyAdjustment,
   );
+  const spread = Math.pow(blended, 1.25) * 1.15 - 0.05;
+  const holisticScore01 = clamp01(spread);
   const holisticFitScore = Math.round(holisticScore01 * 100);
   const aiVerdict = heuristicsVerdict(holisticScore01, flags);
 

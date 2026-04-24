@@ -32,6 +32,12 @@ model School {
   has3YearPathway     Boolean?
   yieldProtectRisk    Boolean?
   avgDaycareCost      Float?
+  oosFriendly         Boolean?
+  oosMatriculantPct   Float?
+  familyFriendly      Boolean?
+  familyProgramNotes  String?
+  secondaryFee        Float?
+  campusImageUrl      String?
   lastVerifiedAt      DateTime?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt

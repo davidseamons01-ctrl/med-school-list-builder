@@ -236,6 +236,7 @@ export async function getExplorerSchoolsAction(input?: {
         input?.quickFilter === "high_oos"
           ? {
               OR: [
+                { oosFriendly: true },
                 { residencyBiasNotes: { contains: "oos", mode: "insensitive" } },
                 { residencyBiasNotes: { contains: "out-of-state", mode: "insensitive" } },
               ],
@@ -252,7 +253,7 @@ export async function getExplorerSchoolsAction(input?: {
         input?.quickFilter === "family_friendly"
           ? {
               OR: [
-                { studentAffairsUrl: { not: null } },
+                { familyFriendly: true },
                 { neighborhoodSafeties: { some: { safetyGrade: { in: ["A", "B"] } } } },
                 { neighborhoodSafeties: { some: { compositeSafetyScore: { gte: 70 } } } },
               ],

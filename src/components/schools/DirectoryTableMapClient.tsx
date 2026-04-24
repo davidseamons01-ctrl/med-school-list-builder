@@ -55,10 +55,22 @@ function haversineMiles(lat1: number, lon1: number, lat2: number, lon2: number) 
   return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function fitTone(score: number) {
-  if (score >= 85) return "text-emerald-300";
-  if (score >= 70) return "text-amber-300";
-  return "text-rose-300";
+function fitChipClasses(score: number) {
+  if (score >= 75) {
+    return "bg-emerald-400/15 text-emerald-200 ring-1 ring-emerald-400/30";
+  }
+  if (score >= 55) {
+    return "bg-amber-400/15 text-amber-200 ring-1 ring-amber-400/30";
+  }
+  return "bg-rose-400/15 text-rose-200 ring-1 ring-rose-400/30";
+}
+
+function fitChipLabel(score: number) {
+  if (score >= 85) return "Strong fit";
+  if (score >= 75) return "Good fit";
+  if (score >= 55) return "Maybe";
+  if (score >= 40) return "Reach";
+  return "Weak fit";
 }
 
 const TH_CLASS =
@@ -259,8 +271,16 @@ export function DirectoryTableMapClient({
                   <td className={`${TD_CLASS} text-slate-100`} title={row.name}>
                     {row.name}
                   </td>
-                  <td className={`${TD_CLASS} text-right font-semibold ${fitTone(row.fitScore)}`}>
-                    {Math.round(row.fitScore)}
+                  <td className={`${TD_CLASS} text-right`}>
+                    <span
+                      className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${fitChipClasses(row.fitScore)}`}
+                      title={fitChipLabel(row.fitScore)}
+                    >
+                      <span className="text-sm">{Math.round(row.fitScore)}</span>
+                      <span className="hidden text-[10px] uppercase tracking-wide md:inline">
+                        {fitChipLabel(row.fitScore)}
+                      </span>
+                    </span>
                   </td>
                   <td className={`${TD_CLASS} text-right text-slate-300`}>{formatCurrency(row.annualCost)}</td>
                   <td className={`${TD_CLASS} text-right text-slate-300`}>

@@ -15,6 +15,7 @@ type MapSchool = {
   score: number; // 0-100 holistic score
   annualCost: number | null;
   tier: string;
+  campusImageUrl?: string | null;
 };
 
 type Props = {
@@ -33,9 +34,31 @@ declare global {
 }
 
 function markerColor(score: number) {
-  if (score > 85) return [34, 197, 94, 1]; // green
-  if (score >= 70) return [245, 158, 11, 1]; // yellow
+  if (score >= 75) return [34, 197, 94, 1]; // green
+  if (score >= 55) return [245, 158, 11, 1]; // yellow
   return [244, 63, 94, 1]; // red
+}
+
+const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
+
+function streetViewImageUrl(lat: number | null, lng: number | null) {
+  if (lat == null || lng == null) return "";
+  if (!GOOGLE_MAPS_KEY) {
+    // Fallback: OpenStreetMap static tile centered on the school; works
+    // without any API key so the popup still shows a useful visual.
+    return `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=16&size=600x300&maptype=mapnik&markers=${lat},${lng},red-pushpin`;
+  }
+  return `https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${lat},${lng}&fov=85&pitch=0&key=${GOOGLE_MAPS_KEY}`;
+}
+
+function streetViewInteractiveUrl(lat: number | null, lng: number | null) {
+  if (lat == null || lng == null) return "#";
+  return `https://www.google.com/maps/@${lat},${lng},3a,75y,90h,90t/data=!3m6!1e1`;
+}
+
+function googleEarthUrl(lat: number | null, lng: number | null) {
+  if (lat == null || lng == null) return "#";
+  return `https://earth.google.com/web/@${lat},${lng},500a,0d,35y,0h,45t,0r`;
 }
 
 function haversineMiles(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -177,6 +200,11 @@ export function SchoolMap({ schools, onVisibleSlugsChange }: Props) {
                     tier: school.tier,
                     score: `${Math.round(school.score)}%`,
                     cost: formatCurrency(school.annualCost),
+                    slug: school.slug,
+                    imageUrl: streetViewImageUrl(school.lat, school.lng),
+                    streetViewUrl: streetViewInteractiveUrl(school.lat, school.lng),
+                    earthUrl: googleEarthUrl(school.lat, school.lng),
+                    detailUrl: `/schools/${school.slug}`,
                   },
                   symbol: {
                     type: "simple-marker",
@@ -186,8 +214,27 @@ export function SchoolMap({ schools, onVisibleSlugsChange }: Props) {
                   },
                   popupTemplate: {
                     title: "{name}",
-                    content:
-                      "<div><strong>{city}, {state}</strong><br/>Tier: {tier}<br/>Holistic fit: {score}<br/>Annual cost: {cost}</div>",
+                    content: `
+                      <div style="max-width:320px;color:#e2e8f0;">
+                        <img
+                          src="{imageUrl}"
+                          alt="Street view near {name}"
+                          style="width:100%;height:160px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,0.08);"
+                          onerror="this.style.display='none'"
+                        />
+                        <div style="margin-top:10px;font-size:13px;line-height:1.5;">
+                          <div><strong>{city}, {state}</strong></div>
+                          <div>Tier: {tier}</div>
+                          <div>Holistic fit: {score}</div>
+                          <div>Annual cost: {cost}</div>
+                        </div>
+                        <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
+                          <a href="{detailUrl}" style="flex:1 1 auto;background:#0ea5e9;color:white;text-decoration:none;padding:6px 10px;border-radius:8px;font-size:12px;text-align:center;">Open deep dive</a>
+                          <a href="{streetViewUrl}" target="_blank" rel="noreferrer" style="flex:1 1 auto;background:rgba(255,255,255,0.08);color:#e2e8f0;text-decoration:none;padding:6px 10px;border-radius:8px;font-size:12px;text-align:center;border:1px solid rgba(255,255,255,0.1);">Street view</a>
+                          <a href="{earthUrl}" target="_blank" rel="noreferrer" style="flex:1 1 auto;background:rgba(255,255,255,0.08);color:#e2e8f0;text-decoration:none;padding:6px 10px;border-radius:8px;font-size:12px;text-align:center;border:1px solid rgba(255,255,255,0.1);">Google Earth</a>
+                        </div>
+                      </div>
+                    `,
                   },
                 }),
               );

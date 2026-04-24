@@ -65,15 +65,15 @@ export function extractSchoolMissionThemes(
   return result;
 }
 
-export type ApplicantThemeWeights = Partial<Record<MissionTheme, number>>;
+export type ThemeWeights = Partial<Record<MissionTheme, number>>;
 
 /**
- * Compute mission fit as a weighted cosine-style overlap.
- * Returns 0-1. A stable floor of 0.25 lets a school with no detectable
- * mission signal still be a viable option.
+ * Legacy coverage-style overlap (used when the school only has keyword-
+ * extracted themes, i.e. a flat 0/1 vector). Kept so fallback behavior is
+ * predictable.
  */
 export function missionFitFromThemes(
-  applicantThemes: ApplicantThemeWeights,
+  applicantThemes: ThemeWeights,
   schoolThemes: Record<MissionTheme, number>,
 ): number {
   const applicantEntries = Object.entries(applicantThemes) as Array<[MissionTheme, number]>;
@@ -90,6 +90,46 @@ export function missionFitFromThemes(
   if (applicantWeightTotal === 0) return 0.45;
 
   const coverage = sharedWeight / applicantWeightTotal;
-  // Coverage of 0 yields a 0.25 floor. Coverage of 1 yields 0.95.
   return Math.max(0.25, Math.min(0.95, 0.25 + coverage * 0.7));
+}
+
+/**
+ * Cosine similarity between two weighted theme vectors. Perfect alignment
+ * (same themes, same weights) → 1. Orthogonal (no shared themes) → 0.
+ * This is the primary signal for AI-vs-AI matching: the bigger the theme
+ * mismatch, the lower the score, exactly what we want for list triage.
+ */
+export function themeVectorCosine(
+  applicantThemes: ThemeWeights,
+  schoolThemes: ThemeWeights,
+): number {
+  const keys = new Set<MissionTheme>();
+  for (const k of Object.keys(applicantThemes) as MissionTheme[]) keys.add(k);
+  for (const k of Object.keys(schoolThemes) as MissionTheme[]) keys.add(k);
+  if (keys.size === 0) return 0;
+
+  let dot = 0;
+  let aMag = 0;
+  let bMag = 0;
+  for (const k of keys) {
+    const a = applicantThemes[k] ?? 0;
+    const b = schoolThemes[k] ?? 0;
+    dot += a * b;
+    aMag += a * a;
+    bMag += b * b;
+  }
+  if (aMag === 0 || bMag === 0) return 0;
+  return dot / (Math.sqrt(aMag) * Math.sqrt(bMag));
+}
+
+/**
+ * Sharpen a raw cosine similarity into the kind of spread the user wants:
+ * strong matches stretch toward the top, weak matches fall off fast.
+ * Output is clamped to [0.08, 0.98] so we never claim perfect certainty and
+ * never hand out flat zeros.
+ */
+export function sharpenAlignment(cosine: number): number {
+  const clamped = Math.max(0, Math.min(1, cosine));
+  const stretched = Math.pow(clamped, 0.85);
+  return Math.max(0.08, Math.min(0.98, stretched));
 }

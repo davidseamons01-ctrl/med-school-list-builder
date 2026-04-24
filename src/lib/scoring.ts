@@ -12,7 +12,10 @@ import {
   MISSION_THEMES,
   extractSchoolMissionThemes,
   missionFitFromThemes,
+  sharpenAlignment,
+  themeVectorCosine,
   type MissionTheme,
+  type ThemeWeights,
 } from "./ai/mission-themes";
 
 export type ApplicantAiProfileForScoring = {
@@ -25,9 +28,30 @@ export type ApplicantAiProfileForScoring = {
   missionThemes: Array<{ theme: string; weight: number }>;
 };
 
+export type SchoolAiMissionForScoring = {
+  themes: Array<{ theme: string; weight: number }>;
+  researchIntensity: number;
+  serviceIntensity: number;
+  ruralOrientation: number;
+  urbanUnderservedOrientation: number;
+};
+
 function coerceMissionTheme(raw: string): MissionTheme | null {
   const canonical = MISSION_THEMES as readonly string[];
   return canonical.includes(raw) ? (raw as MissionTheme) : null;
+}
+
+function themesArrayToWeights(
+  themes: Array<{ theme: string; weight: number }>,
+): ThemeWeights {
+  const result: ThemeWeights = {};
+  for (const { theme, weight } of themes) {
+    const canonical = coerceMissionTheme(theme);
+    if (canonical) {
+      result[canonical] = Math.max(result[canonical] ?? 0, weight);
+    }
+  }
+  return result;
 }
 
 type ScoreSchoolInput = Pick<
@@ -43,6 +67,7 @@ type ScoreSchoolInput = Pick<
   strategyProfile?: ExplorerSchool["strategyProfile"];
   neighborhoodSafeties?: ExplorerSchool["neighborhoodSafeties"];
   clinicalAffiliations?: ExplorerSchool["clinicalAffiliations"];
+  aiMission?: SchoolAiMissionForScoring | null;
 };
 
 function clamp01(value: number): number {
@@ -287,48 +312,77 @@ export function computeFitScore(input: {
     input.school.state,
   );
 
-  let statsScore = 0.5;
+  // ------------------------------------------------------------------
+  // Stat delta vs school median — directional, independent of OOS logic.
+  // Equal or better on both MCAT and GPA → 1.0. Significantly below → ~0.
+  // We keep a separate *tier-selection* stat score that still applies the
+  // OOS admissions-reality penalty downstream.
+  // ------------------------------------------------------------------
+  let statDeltaRaw01 = 0.5;
+  let mcatDelta: number | null = null;
+  let gpaDelta: number | null = null;
   if (medianMcat != null && medianCgpa != null) {
-    // Widened delta so a ±4 MCAT / ±0.08 GPA swing maps to ~0.67-0.33 rather
-    // than the old compressed 0.58-0.42. Makes obvious baselines and reaches
-    // visibly different on the 0-100 scale.
-    const mcatScore = clamp01(0.5 + (input.stats.mcat - medianMcat) / 6);
-    const gpaScore = clamp01(0.5 + (input.stats.cgpa - medianCgpa) / 0.1);
-    statsScore = clamp01((mcatScore * 0.55 + gpaScore * 0.45));
-    if (input.stats.mcat - medianMcat > 8) flags.push("high_stat_vs_median");
+    mcatDelta = input.stats.mcat - medianMcat;
+    gpaDelta = input.stats.cgpa - medianCgpa;
+    // ±6 MCAT is the spread from bottom-decile to top-decile of matriculants.
+    // ±0.12 GPA is roughly one standard deviation at most schools.
+    const mcatRaw = clamp01(0.5 + mcatDelta / 6);
+    const gpaRaw = clamp01(0.5 + gpaDelta / 0.12);
+    statDeltaRaw01 = clamp01(mcatRaw * 0.6 + gpaRaw * 0.4);
+    if (mcatDelta > 8) flags.push("high_stat_vs_median");
   } else {
     flags.push("missing_official_mcat_gpa");
   }
 
+  let statsScore = statDeltaRaw01;
+
   const isOutOfState =
     input.stats.residencyState.trim().toUpperCase() !== input.school.state.trim().toUpperCase();
 
-  // Curated OOS friendliness is the primary signal now; fall back to
-  // published OOS acceptance rates if still missing.
+  // ------------------------------------------------------------------
+  // Per-school OOS acceptance score (0-1). In-state applicants get a flat
+  // high score (residency is a non-issue). OOS applicants get a score that
+  // reflects how realistic admission actually is:
+  //   - Curated oosFriendly=true: 0.75 floor (even higher if matric% strong)
+  //   - Curated oosFriendly=false + public: ~0.15 (mandates in-state)
+  //   - Unknown + public: ~0.45
+  //   - Unknown + private (most privates): ~0.7
+  //   - Published oosMatriculantPct used to fine-tune: 40%+ → strong boost
+  // ------------------------------------------------------------------
   const oosFriendly = input.school.oosFriendly;
   const oosMatriculantPct = input.school.oosMatriculantPct ?? null;
   const publishedOosAcceptance =
     getFactNumber(input.school.facts, "oos_acceptance_rate") ??
     getFactNumber(input.school.facts, "public_oos_acceptance_rate");
 
+  let oosAccept01 = 0.85;
   if (isOutOfState) {
-    if (oosFriendly === false) {
-      statsScore = clamp01(statsScore * 0.35);
+    if (oosFriendly === true) {
+      oosAccept01 = 0.75;
+    } else if (oosFriendly === false) {
+      oosAccept01 = 0.15;
       flags.push("oos_public_stat_penalty");
-    } else if (oosFriendly == null && input.school.control === "PUBLIC") {
-      statsScore = clamp01(statsScore * 0.6);
+    } else if (input.school.control === "PUBLIC") {
+      oosAccept01 = 0.45;
       flags.push("oos_friendliness_unknown");
-    } else if (
-      input.school.control === "PUBLIC" &&
-      publishedOosAcceptance != null &&
-      publishedOosAcceptance < 10
-    ) {
-      statsScore = clamp01(statsScore * 0.55);
-      flags.push("oos_public_stat_penalty");
+    } else {
+      oosAccept01 = 0.7;
     }
-    if (oosMatriculantPct != null && oosMatriculantPct >= 40) {
-      // Very OOS-welcoming schools get a small stat-tier boost.
-      statsScore = clamp01(statsScore * 1.05);
+    if (oosMatriculantPct != null) {
+      // Map 0% → 0.05, 25% → 0.55, 50%+ → 0.9. Blend with base.
+      const fromMatric = clamp01(oosMatriculantPct / 60);
+      oosAccept01 = clamp01(oosAccept01 * 0.55 + fromMatric * 0.45);
+    } else if (publishedOosAcceptance != null) {
+      const fromPublished = clamp01(publishedOosAcceptance / 50);
+      oosAccept01 = clamp01(oosAccept01 * 0.7 + fromPublished * 0.3);
+    }
+    // Keep the historical stat-tier penalty so the BASELINE/TARGET/REACH
+    // bucketing still flags unrealistic publics, but less aggressive since
+    // OOS is now its own holistic component.
+    if (oosFriendly === false) {
+      statsScore = clamp01(statsScore * 0.5);
+    } else if (oosFriendly == null && input.school.control === "PUBLIC") {
+      statsScore = clamp01(statsScore * 0.75);
     }
   }
 
@@ -343,17 +397,23 @@ export function computeFitScore(input: {
   // Mission fit: prefer AI-extracted applicant themes (canonical vocabulary)
   // matched against the school's extracted themes. Falls back to the legacy
   // mission-tag keyword match when no AI profile is available.
+  // Theme-vector alignment is the signature computation. If both applicant
+  // and school have AI-scored theme weights, we do cosine similarity between
+  // the two weighted vectors — this produces wide spread (perfect matches
+  // near 1, orthogonal profiles near 0) which is exactly what the user
+  // wants for list triage.
   let mission: number;
+  let cosineAlignment: number | null = null;
   if (input.aiProfile && input.aiProfile.missionThemes.length > 0) {
-    const schoolThemes = extractSchoolMissionThemes(input.school.missionTagNotes);
-    const applicantWeights: Partial<Record<MissionTheme, number>> = {};
-    for (const { theme, weight } of input.aiProfile.missionThemes) {
-      const canonical = coerceMissionTheme(theme);
-      if (canonical) {
-        applicantWeights[canonical] = Math.max(applicantWeights[canonical] ?? 0, weight);
-      }
+    const applicantWeights = themesArrayToWeights(input.aiProfile.missionThemes);
+    if (input.school.aiMission && input.school.aiMission.themes.length > 0) {
+      const schoolWeights = themesArrayToWeights(input.school.aiMission.themes);
+      cosineAlignment = themeVectorCosine(applicantWeights, schoolWeights);
+      mission = sharpenAlignment(cosineAlignment);
+    } else {
+      const schoolThemes = extractSchoolMissionThemes(input.school.missionTagNotes);
+      mission = missionFitFromThemes(applicantWeights, schoolThemes);
     }
-    mission = missionFitFromThemes(applicantWeights, schoolThemes);
   } else {
     mission = missionOverlapScore(input.school.missionTagNotes, input.prefs.missionTags);
   }
@@ -421,41 +481,63 @@ export function computeFitScore(input: {
     else if (input.school.familyFriendly === false) familyAdjustment = -0.05;
   }
 
-  // If an AI profile is present, blend the applicant's service orientation
-  // and clinical depth against the school's mission / affiliation signals.
-  // This is the "AI-informed" multiplier — computed once per render per
-  // school using already-cached AI scores, with zero additional LLM calls.
-  let aiAlignment01 = 0.5;
-  if (input.aiProfile) {
-    const schoolThemes = extractSchoolMissionThemes(input.school.missionTagNotes);
-    const serviceBoostThemes =
-      schoolThemes.service ||
-      schoolThemes.community_engagement ||
-      schoolThemes.health_equity ||
-      schoolThemes.urban_underserved ||
-      schoolThemes.rural;
-    const serviceMatch = serviceBoostThemes
-      ? input.aiProfile.serviceOrientation / 100
-      : 0.5;
-    const clinicalMatch = input.aiProfile.clinicalDepth / 100;
-    const narrativeBonus = input.aiProfile.narrativeCoherence / 100;
-    aiAlignment01 = clamp01(
-      serviceMatch * 0.4 + clinicalMatch * 0.35 + narrativeBonus * 0.25,
-    );
+  // When both AI profiles exist, use a dimension-level match:
+  // for each applicant axis (research/service/etc), compare to the school's
+  // matching intensity. Good matches boost, bad mismatches penalize.
+  let aiDimensionMatch = 0.5;
+  if (input.aiProfile && input.school.aiMission) {
+    const pairs: Array<[number, number]> = [
+      [input.aiProfile.researchReadiness, input.school.aiMission.researchIntensity],
+      [input.aiProfile.serviceOrientation, input.school.aiMission.serviceIntensity],
+      // Applicant has no explicit "rural orientation" axis — approximate from
+      // mission themes if they tag rural/urban_underserved.
+    ];
+    const applicantWeights = themesArrayToWeights(input.aiProfile.missionThemes);
+    const applicantRural = (applicantWeights.rural ?? 0) * 100;
+    const applicantUrbanUnderserved = (applicantWeights.urban_underserved ?? 0) * 100;
+    pairs.push([applicantRural, input.school.aiMission.ruralOrientation]);
+    pairs.push([applicantUrbanUnderserved, input.school.aiMission.urbanUnderservedOrientation]);
+    let agreeSum = 0;
+    for (const [a, s] of pairs) {
+      // 1 - normalized absolute distance. A school that wants high research
+      // and applicant has high research → 1. Opposite → ~0.
+      agreeSum += 1 - Math.abs(a - s) / 100;
+    }
+    aiDimensionMatch = clamp01(agreeSum / pairs.length);
   }
 
-  // Holistic score weights: 55% deterministic composite, 18% family safety
-  // net, 14% academic powerhouse, 13% AI-informed alignment (when present),
-  // plus the family adjustment. Power-curve stretch keeps the distribution
-  // from clustering in 50-70.
-  const blended = clamp01(
-    composite * (input.aiProfile ? 0.55 : 0.6) +
-      (familySafetyNet / 10) * (input.aiProfile ? 0.18 : 0.2) +
-      academicPowerhouse * (input.aiProfile ? 0.14 : 0.2) +
-      (input.aiProfile ? aiAlignment01 * 0.13 : 0) +
-      familyAdjustment,
-  );
-  const spread = Math.pow(blended, 1.25) * 1.15 - 0.05;
+  // Holistic score blend. The ingredients:
+  //   - mission  (cosine theme alignment, AI-on-AI)  → biggest lever
+  //   - statDeltaRaw01 (equal/better vs median)      → adds if stats line up
+  //   - oosAccept01 (per-school OOS friendliness)    → penalizes unrealistic
+  //   - aiDimensionMatch (research/service axes)     → sharpens alignment
+  //   - composite (weighted preferences)              → baseline sanity
+  //   - familySafetyNet + academicPowerhouse          → supporting context
+  const hasFullAi = Boolean(input.aiProfile && input.school.aiMission);
+  const blended = hasFullAi
+    ? clamp01(
+        mission * 0.35 +
+          statDeltaRaw01 * 0.17 +
+          oosAccept01 * 0.13 +
+          aiDimensionMatch * 0.13 +
+          composite * 0.12 +
+          (familySafetyNet / 10) * 0.05 +
+          academicPowerhouse * 0.05 +
+          familyAdjustment,
+      )
+    : clamp01(
+        composite * (input.aiProfile ? 0.4 : 0.45) +
+          statDeltaRaw01 * 0.2 +
+          oosAccept01 * 0.15 +
+          (familySafetyNet / 10) * (input.aiProfile ? 0.12 : 0.15) +
+          academicPowerhouse * (input.aiProfile ? 0.13 : 0.15) +
+          familyAdjustment,
+      );
+  // More aggressive stretch when we have AI-vs-AI signal so the list
+  // actually spans red→green rather than clustering mid.
+  const spread = hasFullAi
+    ? Math.pow(blended, 1.4) * 1.3 - 0.08
+    : Math.pow(blended, 1.25) * 1.15 - 0.05;
   const holisticScore01 = clamp01(spread);
   const holisticFitScore = Math.round(holisticScore01 * 100);
   const aiVerdict = heuristicsVerdict(holisticScore01, flags);

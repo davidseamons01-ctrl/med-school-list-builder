@@ -52,8 +52,31 @@ model School {
   neighborhoodSafety   NeighborhoodSafety[]
   clinicalAffiliations ClinicalAffiliation[]
   secondaryPrompts     SecondaryPrompt[]
+  aiMissionProfile     SchoolAiMissionProfile?
 
   @@index([state])
+}
+
+model SchoolAiMissionProfile {
+  id                String   @id @default(cuid())
+  schoolId          String   @unique
+  school            School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  themesJson        String
+  archetypesJson    String
+  focusSummary      String
+  selectivityTier   String
+  researchIntensity Int
+  serviceIntensity  Int
+  ruralOrientation  Int
+  urbanUnderservedOrientation Int
+
+  model             String   @default("claude-sonnet-4-5")
+  promptVersion     String   @default("v1")
+  sourceFingerprint String
+  rawResponseJson   String?
+  generatedAt       DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model SchoolFact {

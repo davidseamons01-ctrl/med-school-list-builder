@@ -9,6 +9,7 @@ type Props = {
   propertyCrimeGrade: string | null;
   avgDaycareCost: number | null;
   streetViewEmbedUrl: string;
+  streetViewExternalUrl?: string;
 };
 
 export function FamilyResourcesPanel({
@@ -17,6 +18,7 @@ export function FamilyResourcesPanel({
   propertyCrimeGrade,
   avgDaycareCost,
   streetViewEmbedUrl,
+  streetViewExternalUrl,
 }: Props) {
   const [tab, setTab] = useState<"environment" | "streetview">("environment");
 
@@ -69,13 +71,27 @@ export function FamilyResourcesPanel({
           </div>
         </div>
       ) : (
-        <div className="mt-4 overflow-hidden rounded-2xl border border-white/10">
-          <iframe
-            title="Main hospital street view"
-            src={streetViewEmbedUrl}
-            className="h-[320px] w-full"
-            loading="lazy"
-          />
+        <div className="mt-4 space-y-3">
+          <div className="overflow-hidden rounded-2xl border border-white/10">
+            <iframe
+              title="Main hospital street view"
+              src={streetViewEmbedUrl}
+              className="h-[320px] w-full"
+              loading="lazy"
+              allow="fullscreen"
+            />
+          </div>
+          {streetViewExternalUrl ? (
+            <a
+              href={streetViewExternalUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-cyan-400/40 bg-cyan-400/10 px-4 py-2 text-xs font-medium text-cyan-200 hover:bg-cyan-400/20"
+            >
+              Open full Street View on Google Maps
+              <span aria-hidden>↗</span>
+            </a>
+          ) : null}
         </div>
       )}
     </section>

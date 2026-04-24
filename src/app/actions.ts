@@ -356,6 +356,7 @@ export async function getExplorerSchoolsAction(input?: {
         take: 6,
         orderBy: { updatedAt: "desc" },
       },
+      aiMissionProfile: true,
     },
     orderBy: [{ state: "asc" }, { name: "asc" }],
     take: 220,
@@ -388,6 +389,23 @@ export async function getExplorerSchoolsAction(input?: {
               tuitionNonResident: school.financialProfile.tuitionNonResident ?? medianSnapshot.tuitionNonResident,
             }
           : null,
+        aiMissionProfile: school.aiMissionProfile
+          ? {
+              themes: parseJson<Array<{ theme: string; weight: number }>>(
+                school.aiMissionProfile.themesJson,
+                [],
+              ),
+              archetypes: parseJson<string[]>(school.aiMissionProfile.archetypesJson, []),
+              focusSummary: school.aiMissionProfile.focusSummary,
+              selectivityTier: school.aiMissionProfile.selectivityTier,
+              researchIntensity: school.aiMissionProfile.researchIntensity,
+              serviceIntensity: school.aiMissionProfile.serviceIntensity,
+              ruralOrientation: school.aiMissionProfile.ruralOrientation,
+              urbanUnderservedOrientation:
+                school.aiMissionProfile.urbanUnderservedOrientation,
+              generatedAt: school.aiMissionProfile.generatedAt.toISOString(),
+            }
+          : null,
       };
     }),
   );
@@ -413,9 +431,29 @@ export async function getSchoolDetailAction(slug: string) {
       neighborhoodSafety: { orderBy: [{ updatedAt: "desc" }] },
       clinicalAffiliations: { orderBy: [{ updatedAt: "desc" }, { hospitalName: "asc" }] },
       secondaryPrompts: { orderBy: [{ year: "desc" }, { createdAt: "desc" }] },
+      aiMissionProfile: true,
     },
   });
-  return school;
+  if (!school) return null;
+  return {
+    ...school,
+    aiMissionProfile: school.aiMissionProfile
+      ? {
+          themes: parseJson<Array<{ theme: string; weight: number }>>(
+            school.aiMissionProfile.themesJson,
+            [],
+          ),
+          archetypes: parseJson<string[]>(school.aiMissionProfile.archetypesJson, []),
+          focusSummary: school.aiMissionProfile.focusSummary,
+          selectivityTier: school.aiMissionProfile.selectivityTier,
+          researchIntensity: school.aiMissionProfile.researchIntensity,
+          serviceIntensity: school.aiMissionProfile.serviceIntensity,
+          ruralOrientation: school.aiMissionProfile.ruralOrientation,
+          urbanUnderservedOrientation: school.aiMissionProfile.urbanUnderservedOrientation,
+          generatedAt: school.aiMissionProfile.generatedAt.toISOString(),
+        }
+      : null,
+  };
 }
 
 export async function addSchoolToListAction(slug: string) {

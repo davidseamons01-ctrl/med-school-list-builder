@@ -43,7 +43,19 @@ export default async function SchoolsPage({
         prefs: bundle.profile.prefs,
         weights: bundle.profile.weights,
         wars: bundle.profile.wars,
-        school,
+        school: {
+          ...school,
+          aiMission: school.aiMissionProfile
+            ? {
+                themes: school.aiMissionProfile.themes,
+                researchIntensity: school.aiMissionProfile.researchIntensity,
+                serviceIntensity: school.aiMissionProfile.serviceIntensity,
+                ruralOrientation: school.aiMissionProfile.ruralOrientation,
+                urbanUnderservedOrientation:
+                  school.aiMissionProfile.urbanUnderservedOrientation,
+              }
+            : null,
+        },
         aiProfile: bundle.profile.ai
           ? {
               academicStrength: bundle.profile.ai.academicStrength,

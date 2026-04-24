@@ -64,7 +64,19 @@ export default async function SchoolDetailPage({
     prefs: profile.prefs,
     weights: profile.weights,
     wars: profile.wars,
-    school,
+    school: {
+      ...school,
+      aiMission: school.aiMissionProfile
+        ? {
+            themes: school.aiMissionProfile.themes,
+            researchIntensity: school.aiMissionProfile.researchIntensity,
+            serviceIntensity: school.aiMissionProfile.serviceIntensity,
+            ruralOrientation: school.aiMissionProfile.ruralOrientation,
+            urbanUnderservedOrientation:
+              school.aiMissionProfile.urbanUnderservedOrientation,
+          }
+        : null,
+    },
     aiProfile: profile.ai
       ? {
           academicStrength: profile.ai.academicStrength,
@@ -119,11 +131,15 @@ export default async function SchoolDetailPage({
     null;
   const avgDaycareCost = school.avgDaycareCost ?? getFactNumber(school.facts, "daycare_monthly_cost");
   const googleKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  const hospitalStreetView = school.lat && school.lng
-    ? googleKey
-      ? `https://www.google.com/maps/embed/v1/streetview?key=${googleKey}&location=${school.lat},${school.lng}&heading=210&pitch=5&fov=70`
-      : `https://maps.google.com/maps?q=&layer=c&cbll=${school.lat},${school.lng}&cbp=11,0,0,0,0&output=svembed`
-    : `https://www.google.com/maps?q=${encodeURIComponent(`${school.name} campus ${school.city}`)}&output=embed`;
+  const placeQuery = encodeURIComponent(`${school.name}, ${school.city}, ${school.state}`);
+  const hospitalStreetView = googleKey
+    ? `https://www.google.com/maps/embed/v1/place?key=${googleKey}&q=${placeQuery}&zoom=16&maptype=satellite`
+    : school.lat && school.lng
+    ? `https://maps.google.com/maps?q=&layer=c&cbll=${school.lat},${school.lng}&cbp=11,0,0,0,0&output=svembed`
+    : `https://www.google.com/maps?q=${placeQuery}&output=embed`;
+  const hospitalStreetViewLink = school.lat && school.lng
+    ? `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${school.lat},${school.lng}`
+    : `https://www.google.com/maps/search/?api=1&query=${placeQuery}`;
 
   const prompts = parseSecondaryPrompts(school.secondaryPrompts, school.facts, school.secondaryPromptsUrl);
   const personalStatementProxy = `MCAT ${profile.stats.mcat}; cGPA ${profile.stats.cgpa}; sGPA ${profile.stats.sgpa}; residency ${profile.stats.residencyState}; interest ${profile.stats.specialtyInterest}.`;
@@ -225,6 +241,7 @@ export default async function SchoolDetailPage({
           propertyCrimeGrade={propertyCrimeGrade}
           avgDaycareCost={avgDaycareCost}
           streetViewEmbedUrl={hospitalStreetView}
+          streetViewExternalUrl={hospitalStreetViewLink}
         />
       </div>
 

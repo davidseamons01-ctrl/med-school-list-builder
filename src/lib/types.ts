@@ -111,6 +111,17 @@ export type ExplorerSchool = {
     isSafetyNet: boolean | null;
     isVA: boolean | null;
   }>;
+  aiMissionProfile?: {
+    themes: Array<{ theme: string; weight: number }>;
+    archetypes: string[];
+    focusSummary: string;
+    selectivityTier: string;
+    researchIntensity: number;
+    serviceIntensity: number;
+    ruralOrientation: number;
+    urbanUnderservedOrientation: number;
+    generatedAt: string;
+  } | null;
   facts: SchoolFactRow[];
 };
 

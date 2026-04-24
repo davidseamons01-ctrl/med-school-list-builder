@@ -41,24 +41,61 @@ function markerColor(score: number) {
 
 const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
 
-function streetViewImageUrl(lat: number | null, lng: number | null) {
-  if (lat == null || lng == null) return "";
+function schoolSearchQuery(name: string, city: string, state: string) {
+  return `${name}, ${city}, ${state}`;
+}
+
+function streetViewImageUrl(
+  name: string,
+  city: string,
+  state: string,
+  lat: number | null,
+  lng: number | null,
+) {
   if (!GOOGLE_MAPS_KEY) {
-    // Fallback: OpenStreetMap static tile centered on the school; works
-    // without any API key so the popup still shows a useful visual.
-    return `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=16&size=600x300&maptype=mapnik&markers=${lat},${lng},red-pushpin`;
+    if (lat != null && lng != null) {
+      return `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=16&size=600x300&maptype=mapnik&markers=${lat},${lng},red-pushpin`;
+    }
+    return "";
   }
-  return `https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${lat},${lng}&fov=85&pitch=0&key=${GOOGLE_MAPS_KEY}`;
+  // Google Static Street View accepts a free-text address via `location=`
+  // and will snap to the closest available panorama. That is *far* more
+  // reliable than raw lat/lng (which often sits inside a hospital building
+  // where no pano exists and the API returns a gray placeholder).
+  const query = encodeURIComponent(schoolSearchQuery(name, city, state));
+  return `https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${query}&fov=85&pitch=0&source=outdoor&key=${GOOGLE_MAPS_KEY}`;
 }
 
-function streetViewInteractiveUrl(lat: number | null, lng: number | null) {
-  if (lat == null || lng == null) return "#";
-  return `https://www.google.com/maps/@${lat},${lng},3a,75y,90h,90t/data=!3m6!1e1`;
+function streetViewInteractiveUrl(
+  name: string,
+  city: string,
+  state: string,
+  lat: number | null,
+  lng: number | null,
+) {
+  // Google Maps URL API explicit Street View mode. Using `viewpoint` with
+  // the school's coordinates opens the nearest real panorama, which is
+  // what actually happens in Google Maps when you drag Pegman to a spot.
+  // If we don't have coordinates, fall back to a plain search URL.
+  if (lat != null && lng != null) {
+    return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}&heading=0&pitch=0&fov=90`;
+  }
+  const query = encodeURIComponent(schoolSearchQuery(name, city, state));
+  return `https://www.google.com/maps/search/?api=1&query=${query}`;
 }
 
-function googleEarthUrl(lat: number | null, lng: number | null) {
-  if (lat == null || lng == null) return "#";
-  return `https://earth.google.com/web/@${lat},${lng},500a,0d,35y,0h,45t,0r`;
+function googleEarthUrl(
+  name: string,
+  city: string,
+  state: string,
+  lat: number | null,
+  lng: number | null,
+) {
+  if (lat != null && lng != null) {
+    return `https://earth.google.com/web/@${lat},${lng},500a,0d,35y,0h,45t,0r`;
+  }
+  const query = encodeURIComponent(schoolSearchQuery(name, city, state));
+  return `https://earth.google.com/web/search/${query}`;
 }
 
 function haversineMiles(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -201,9 +238,27 @@ export function SchoolMap({ schools, onVisibleSlugsChange }: Props) {
                     score: `${Math.round(school.score)}%`,
                     cost: formatCurrency(school.annualCost),
                     slug: school.slug,
-                    imageUrl: streetViewImageUrl(school.lat, school.lng),
-                    streetViewUrl: streetViewInteractiveUrl(school.lat, school.lng),
-                    earthUrl: googleEarthUrl(school.lat, school.lng),
+                    imageUrl: streetViewImageUrl(
+                      school.name,
+                      school.city,
+                      school.state,
+                      school.lat,
+                      school.lng,
+                    ),
+                    streetViewUrl: streetViewInteractiveUrl(
+                      school.name,
+                      school.city,
+                      school.state,
+                      school.lat,
+                      school.lng,
+                    ),
+                    earthUrl: googleEarthUrl(
+                      school.name,
+                      school.city,
+                      school.state,
+                      school.lat,
+                      school.lng,
+                    ),
                     detailUrl: `/schools/${school.slug}`,
                   },
                   symbol: {
@@ -215,18 +270,24 @@ export function SchoolMap({ schools, onVisibleSlugsChange }: Props) {
                   popupTemplate: {
                     title: "{name}",
                     content: `
-                      <div style="max-width:320px;color:#e2e8f0;">
-                        <img
-                          src="{imageUrl}"
-                          alt="Street view near {name}"
-                          style="width:100%;height:160px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,0.08);"
-                          onerror="this.style.display='none'"
-                        />
-                        <div style="margin-top:10px;font-size:13px;line-height:1.5;">
-                          <div><strong>{city}, {state}</strong></div>
-                          <div>Tier: {tier}</div>
-                          <div>Holistic fit: {score}</div>
-                          <div>Annual cost: {cost}</div>
+                      <div style="max-width:340px;color:#e2e8f0;">
+                        <a href="{streetViewUrl}" target="_blank" rel="noreferrer" style="display:block;position:relative;text-decoration:none;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);background:#0f172a;">
+                          <img
+                            src="{imageUrl}"
+                            alt="Street view near {name}"
+                            style="width:100%;height:170px;object-fit:cover;display:block;"
+                            onerror="this.onerror=null;this.style.display='none';this.parentElement.style.background='linear-gradient(135deg,#0ea5e9,#6366f1)';this.parentElement.style.height='170px';"
+                          />
+                          <div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(2,6,23,0.85) 0%, rgba(2,6,23,0.1) 50%);pointer-events:none;"></div>
+                          <div style="position:absolute;left:10px;right:10px;bottom:8px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#f8fafc;">
+                            <span style="background:rgba(14,165,233,0.95);padding:4px 10px;border-radius:999px;font-weight:600;">Open Street View</span>
+                            <span style="opacity:0.9;">{city}, {state}</span>
+                          </div>
+                        </a>
+                        <div style="margin-top:10px;font-size:13px;line-height:1.55;">
+                          <div>Tier: <strong>{tier}</strong></div>
+                          <div>Holistic fit: <strong>{score}</strong></div>
+                          <div>Annual cost: <strong>{cost}</strong></div>
                         </div>
                         <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
                           <a href="{detailUrl}" style="flex:1 1 auto;background:#0ea5e9;color:white;text-decoration:none;padding:6px 10px;border-radius:8px;font-size:12px;text-align:center;">Open deep dive</a>

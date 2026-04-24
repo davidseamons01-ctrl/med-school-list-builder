@@ -38,6 +38,7 @@ model School {
   familyProgramNotes  String?
   secondaryFee        Float?
   campusImageUrl      String?
+  campusGeocodedAt    DateTime?
   lastVerifiedAt      DateTime?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt

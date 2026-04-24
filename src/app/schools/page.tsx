@@ -139,6 +139,7 @@ export default async function SchoolsPage({
           false,
         websiteUrl: school.websiteUrl ?? null,
         admissionsUrl: school.admissionsUrl ?? null,
+        campusImageUrl: school.campusImageUrl ?? null,
       };
     })
     .sort((a, b) => b.fitScore - a.fitScore);

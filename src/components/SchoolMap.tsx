@@ -240,13 +240,15 @@ export function SchoolMap({ schools, onVisibleSlugsChange }: Props) {
                     score: `${Math.round(school.score)}%`,
                     cost: formatCurrency(school.annualCost),
                     slug: school.slug,
-                    imageUrl: streetViewImageUrl(
-                      school.name,
-                      school.city,
-                      school.state,
-                      school.lat,
-                      school.lng,
-                    ),
+                    campusImageUrl:
+                      school.campusImageUrl ||
+                      streetViewImageUrl(
+                        school.name,
+                        school.city,
+                        school.state,
+                        school.lat,
+                        school.lng,
+                      ),
                     streetViewUrl: streetViewInteractiveUrl(
                       school.name,
                       school.city,
@@ -278,32 +280,17 @@ export function SchoolMap({ schools, onVisibleSlugsChange }: Props) {
                   popupTemplate: {
                     title: "{name}",
                     content: `
-                      <div style="max-width:340px;color:#e2e8f0;">
-                        <a href="{streetViewUrl}" target="_blank" rel="noreferrer" style="display:block;position:relative;text-decoration:none;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);background:#0f172a;">
-                          <img
-                            src="{imageUrl}"
-                            alt="Street view near {name}"
-                            style="width:100%;height:170px;object-fit:cover;display:block;"
-                            onerror="this.onerror=null;this.style.display='none';this.parentElement.style.background='linear-gradient(135deg,#0ea5e9,#6366f1)';this.parentElement.style.height='170px';"
-                          />
-                          <div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(2,6,23,0.85) 0%, rgba(2,6,23,0.1) 50%);pointer-events:none;"></div>
-                          <div style="position:absolute;left:10px;right:10px;bottom:8px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#f8fafc;">
-                            <span style="background:rgba(14,165,233,0.95);padding:4px 10px;border-radius:999px;font-weight:600;">Open Street View</span>
-                            <span style="opacity:0.9;">{city}, {state}</span>
-                          </div>
-                        </a>
-                        <div style="margin-top:10px;font-size:13px;line-height:1.55;">
-                          <div>Tier: <strong>{tier}</strong></div>
-                          <div>Holistic fit: <strong>{score}</strong></div>
-                          <div>Annual cost: <strong>{cost}</strong></div>
-                        </div>
+                      <div style="width:340px;color:#e2e8f0;">
+                        <img
+                          src="{campusImageUrl}"
+                          alt="{name} campus"
+                          style="width:100%;height:210px;object-fit:cover;display:block;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:linear-gradient(135deg,#0ea5e9,#6366f1);"
+                          onerror="this.onerror=null;this.style.display='none';"
+                        />
+                        <div style="margin-top:8px;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#94a3b8;">{city}, {state}</div>
                         <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
-                          <a href="{websiteUrl}" target="_blank" rel="noreferrer" style="flex:1 1 auto;background:#0ea5e9;color:white;text-decoration:none;padding:6px 10px;border-radius:8px;font-size:12px;text-align:center;">School website</a>
-                          <a href="{detailUrl}" style="flex:1 1 auto;background:rgba(255,255,255,0.08);color:#e2e8f0;text-decoration:none;padding:6px 10px;border-radius:8px;font-size:12px;text-align:center;border:1px solid rgba(255,255,255,0.1);">Research hub</a>
-                        </div>
-                        <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
-                          <a href="{streetViewUrl}" target="_blank" rel="noreferrer" style="flex:1 1 auto;background:rgba(255,255,255,0.05);color:#cbd5f5;text-decoration:none;padding:6px 10px;border-radius:8px;font-size:11px;text-align:center;border:1px solid rgba(255,255,255,0.08);">Street view</a>
-                          <a href="{earthUrl}" target="_blank" rel="noreferrer" style="flex:1 1 auto;background:rgba(255,255,255,0.05);color:#cbd5f5;text-decoration:none;padding:6px 10px;border-radius:8px;font-size:11px;text-align:center;border:1px solid rgba(255,255,255,0.08);">Google Earth</a>
+                          <a href="{websiteUrl}" target="_blank" rel="noreferrer" style="flex:1 1 auto;background:#0ea5e9;color:white;text-decoration:none;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;text-align:center;">School website</a>
+                          <a href="{streetViewUrl}" target="_blank" rel="noreferrer" style="flex:1 1 auto;background:rgba(255,255,255,0.08);color:#e2e8f0;text-decoration:none;padding:8px 12px;border-radius:8px;font-size:12px;text-align:center;border:1px solid rgba(255,255,255,0.1);">Street view</a>
                         </div>
                       </div>
                     `,

@@ -5,6 +5,7 @@ import { formatCurrency } from "@/lib/format";
 import { getResidencyAwareAnnualCost, lizzym, warsTierBand } from "@/lib/scoring";
 import { ApplicantAiProfileCard } from "@/components/ai/ApplicantAiProfileCard";
 import { SchoolMissionIngestCard } from "@/components/ai/SchoolMissionIngestCard";
+import { CampusGeocodeCard } from "@/components/ai/CampusGeocodeCard";
 
 export default async function DashboardPage() {
   const { bundle, listData, schoolsCount, factsCount, resourcesCount } =
@@ -120,6 +121,8 @@ export default async function DashboardPage() {
       />
 
       <SchoolMissionIngestCard />
+
+      <CampusGeocodeCard />
 
       <section className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
         <div className="surface rounded-[2rem] p-6">
